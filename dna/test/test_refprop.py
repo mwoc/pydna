@@ -41,7 +41,7 @@ def _maintest(rp):
         rp.fluidlib()
         print('\n')
 
-        prop = rp.setup('def', 'air',)
+        prop = rp.setup('def', 'air.ppf',)
         print('setup air')
         print(prop, '\n')
 

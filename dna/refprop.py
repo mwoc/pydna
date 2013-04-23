@@ -6536,5 +6536,5 @@ if __name__ == '__main__':
     print(_fluidextention())
     print(_fpath)
 
-    import rptest
+    from test import test_refprop as rptest
     rptest.settest('refprop')
