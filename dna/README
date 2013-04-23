@@ -1,0 +1,7 @@
+rp2so,             a binary file that compile the fortran files and build a shared object file. README text inside
+
+refprop.py,     dual operating platform (Linux and Windows) wrapper which use either the librefprop.so or refprop.dll file to call the refprop functions
+
+multiRP.py,     same as above but then also managed multiprocessing calls
+
+rptest.py,         test file for testing refprop.py and multiRP.py but is also useful for examples
