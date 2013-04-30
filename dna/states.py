@@ -42,6 +42,7 @@ for i in range(0, 21):
         print('failed: ',error)
         pass
     else:
+        print(prop)
         yval = prop['p']/100
         y.append(yval)
         print('P_sat: ',yval)
