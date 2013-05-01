@@ -61,15 +61,24 @@ def state(node):
         mode = 'tq'
         in1 = node['t'] + 273.15
         in2 = massToMolar(node['q'])[0]
+    elif('p' in node and 'q' in node):
+        mode = 'pq'
+        in1 = node['p']*100
+        in2 = massToMolar(node['q'])[0]
+    elif('p' in node and 's' in node):
+        mode = 'ps'
+        in1 = node['p']*100
+        in2 = node['s']*molWmix
     else:
         raise InputError('state','Missing inputs for: '.str(node))
 
     prop = rp.flsh(mode, in1, in2, x)
 
-    prop['p'] = prop['p']/100
-    prop['h'] = prop['h']/molWmix
-    prop['s'] = prop['s']/molWmix
-    prop['t'] = prop['t'] - 273.15
+    prop['p'] = prop['p']/100 # kPa > hPa
+    prop['h'] = prop['h']/molWmix # J/mol*K > J/kg*K
+    prop['D'] = prop['D']*molWmix/1000 # mol/L > kg/m3
+    prop['s'] = prop['s']/molWmix # J/mol*K > J/kg*K
+    prop['t'] = prop['t'] - 273.15 # K > C
     prop['q'] = molarToMass(prop['q'])[0]
     prop['y'] = molarToMass(prop['x'][0])[0]
     prop['yvap'] = molarToMass(prop['xvap'][0])[0]

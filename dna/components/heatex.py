@@ -6,16 +6,14 @@ def pinchHex(n1,n2,n3,n4,Nseg):
     prop1 = states.state(n1)
     n1['h'] = prop1['h']
 
-    n2['p'] = n1['p']
-    n2['mdot'] = n1['mdot']
-    n2['y'] = n1['y']
-
     #cold inlet (n3):
     prop3 = states.state(n3)
     n3['h'] = prop3['h']
 
+    n2['p'] = n1['p']
+    n2['y'] = n1['y']
+
     n4['p'] = n3['p']
-    n4['mdot'] = n3['mdot']
     n4['y'] = n3['y']
 
     if(not 't' in n4):
@@ -48,21 +46,17 @@ def pinchHex(n1,n2,n3,n4,Nseg):
         n4['h'] = prop4['h']
 
     if(not 'mdot' in n3):
-
-        Mh = n1['mdot']
-        Mc = ((n1['h'] - n2['h']) * Mh) / (n4['h'] - n3['h'])
+        n3['mdot'] = ((n1['h'] - n2['h']) * n1['mdot']) / (n4['h'] - n3['h'])
 
     elif(not 'mdot' in n1):
+        n1['mdot'] = ((n4['h'] - n3['h']) * n3['mdot']) / (n1['h'] - n2['h'])
 
-        Mc = n3['mdot']
-        Mh = ((n4['h'] - n3['h']) * Mc) / (n1['h'] - n2['h'])
-    else:
-        Mc = n3['mdot']
-        Mh = n1['mdot']
+    n2['mdot'] = n1['mdot']
+    n4['mdot'] = n3['mdot']
 
     #hot side
     print('Hot side:')
-    print('Mdot: ',Mh,' [kg/s]')
+    print('Mdot: ',n1['mdot'],' [kg/s]')
 
     print('Inlet:',{'h':n1['h'],'t':n1['t'],'x':prop1['q']})
 
@@ -72,7 +66,7 @@ def pinchHex(n1,n2,n3,n4,Nseg):
 
     #cold side
     print('Cold side:')
-    print('Mdot: ',Mc,' [kg/s]')
+    print('Mdot: ',n3['mdot'],' [kg/s]')
 
     print('Inlet:',{'h':n3['h'],'t':n3['t'],'x':prop3['q']})
 
@@ -112,4 +106,4 @@ def pinchHex(n1,n2,n3,n4,Nseg):
             dT_min = T2_ - T3_
             print('New pinch at index ',i,': ',dT_min, ' [K]')
 
-    return {'dTmin':dT_min,'Th':Th,'Tc':Tc,'Mh':Mh,'Mc':Mc}
+    return {'dTmin':dT_min,'Th':Th,'Tc':Tc}
