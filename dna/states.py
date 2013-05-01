@@ -38,50 +38,41 @@ def massToMolar(y):
 
     return [m_nh3/mt, 1-m_nh3/mt]
 
-def PHYammonia(P,H,x):
-    '''
-    Input:
-        P = pressure in [bar]
-        H = enthalpy [J/kg]
-        x[0,1] = NH3/H2O mole fraction [-]
-    Output:
-        Fluid properties for ammonia/water mixture at requested state
-    '''
+def state(node):
+
+    x = massToMolar(node['y'])
+    rp.setref(hrf='def',ixflag=1, x0=x)
 
     molWmix = float(x[0]) * float(molWNH3) + float(x[1]) * float(molWH2O)
 
-    rp.setref(hrf='def',ixflag=1, x0=x)
-    prop = rp.flsh('ph', P*100, H*molWmix, x)
+    mode = ''
+    in1 = 0
+    in2 = 0
 
-    return prop
+    if('h' in node and 'p' in node):
+        mode = 'ph'
+        in1 = node['p']*100
+        in2 = node['h']*molWmix
+    elif('t' in node and 'p' in node):
+        mode = 'tp'
+        in1 = node['t'] + 273.15
+        in2 = node['p']*100
+    elif('t' in node and 'q' in node):
+        mode = 'tq'
+        in1 = node['t'] + 273.15
+        in2 = massToMolar(node['q'])[0]
+    else:
+        raise InputError('state','Missing inputs for: '.str(node))
 
-def getH(P,T,x):
-    '''
-    Input:
-        P = pressure in [bar]
-        T = temperature [C]
-        x[0,1] = NH3/H2O mole fraction [-]
-    Output:
-        H = enthalpy [J/kg]
-    '''
+    prop = rp.flsh(mode, in1, in2, x)
 
-    molWmix = float(x[0]) * float(molWNH3) + float(x[1]) * float(molWH2O)
-
-    rp.setref(hrf='def',ixflag=1, x0=x)
-    prop = rp.flsh('tp', (T + 273.15), P*100, x)
-
-    return prop['h']/molWmix
-
-def getPsat(Tsat,x):
-    '''
-    Input:
-        Tsat = saturation temperature in [C]
-        x[0,1] = NH3/H2O mole fraction [-]
-    Output:
-        Fluid properties for ammonia/water mixture at requested state
-    '''
-
-    rp.setref(hrf='def',ixflag=1, x0=x)
-    prop = rp.flsh('tq', (Tsat + 273.15), 0, x)
+    prop['p'] = prop['p']/100
+    prop['h'] = prop['h']/molWmix
+    prop['s'] = prop['s']/molWmix
+    prop['t'] = prop['t'] - 273.15
+    prop['q'] = molarToMass(prop['q'])[0]
+    prop['y'] = molarToMass(prop['x'][0])[0]
+    prop['yvap'] = molarToMass(prop['xvap'][0])[0]
+    prop['yliq'] = molarToMass(prop['xliq'][0])[0]
 
     return prop

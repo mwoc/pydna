@@ -15,13 +15,14 @@ for i in range(0, 21):
     print('NH3 mass fraction: ',xval)
 
     try:
-        prop = states.getPsat(Tsat,states.massToMolar(xval))
+        n1 = {'t':Tsat,'q':0,'y':xval}
+        prop = states.state(n1)
     except Exception as error:
         print('failed: ',error)
         pass
     else:
         print(prop)
-        yval = prop['p']/100
+        yval = prop['p']
         y.append(yval)
         print('P_sat: ',yval)
 
