@@ -12,6 +12,8 @@ def splitter(n1,n2,n3):
         n2['mdot'] = n1['mdot'] - n3['mdot']
     elif(not 'mdot' in n3):
         n3['mdot'] = n1['mdot'] - n2['mdot']
+    elif(not 'mdot' in n1):
+        n1['mdot'] = n2['mdot'] + n3['mdot']
     else:
         if(n1['mdot'] != (n2['mdot']+n3['mdot'])):
             raise InputError('splitter','mass flow rates do not match')
