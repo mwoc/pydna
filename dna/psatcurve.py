@@ -5,6 +5,9 @@ from decimal import Decimal
 
 x = []
 y = []
+
+Tsat = 30
+
 for i in range(0, 21):
     xval = i/20
     x.append(xval)
@@ -12,7 +15,7 @@ for i in range(0, 21):
     print('NH3 mass fraction: ',xval)
 
     try:
-        prop = states.getPsat(30,states.massToMolar(xval))
+        prop = states.getPsat(Tsat,states.massToMolar(xval))
     except Exception as error:
         print('failed: ',error)
         pass
@@ -36,7 +39,7 @@ xp = numpy.linspace(0, 1, 100)
 plt.plot(x, y, '.', xp, p(xp), '-')
 plt.xlabel('NH_3 mass fraction')
 plt.ylabel('Pressure [bar]')
-plt.title('Saturation pressure for varying NH_3 mass fraction and T_sat=30C')
-plt.ylim(0,14)
+plt.title('Saturation pressure for varying NH_3 mass fraction and T_sat= '+str(Tsat)+' [C]')
+plt.ylim(0,p(1))
 plt.grid(True)
 plt.show()
