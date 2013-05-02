@@ -21,6 +21,8 @@ def pinchHex(n1,n2,n3,n4,Nseg):
     n4['y'] = n3['y']
 
     if(not 't' in n4):
+        #TODO: calculate vapour quality
+
         #hot outlet (n2):
         prop2 = states.state(n2)
         n2['h'] = prop2['h']
