@@ -49,10 +49,18 @@ def state(node):
     in1 = 0
     in2 = 0
 
-    if('h' in node and 'p' in node):
+    if('p' in node and 'h' in node):
         mode = 'ph'
         in1 = node['p']*100
         in2 = node['h']*molWmix
+    elif('p' in node and 's' in node):
+        mode = 'ps'
+        in1 = node['p']*100
+        in2 = node['s']*molWmix
+    elif('p' in node and 'q' in node):
+        mode = 'pq'
+        in1 = node['p']*100
+        in2 = massToMolar(node['q'])[0]
     elif('t' in node and 'p' in node):
         mode = 'tp'
         in1 = node['t'] + 273.15
@@ -61,14 +69,6 @@ def state(node):
         mode = 'tq'
         in1 = node['t'] + 273.15
         in2 = massToMolar(node['q'])[0]
-    elif('p' in node and 'q' in node):
-        mode = 'pq'
-        in1 = node['p']*100
-        in2 = massToMolar(node['q'])[0]
-    elif('p' in node and 's' in node):
-        mode = 'ps'
-        in1 = node['p']*100
-        in2 = node['s']*molWmix
     else:
         raise InputError('state','Missing inputs for: '.str(node))
 

@@ -7,6 +7,7 @@ def splitter(n1,n2,n3):
     n3['h'] = n2['h'] = n1['h']
     n3['y'] = n2['y'] = n1['y']
     n3['q'] = n2['q'] = n1['q']
+    n3['s'] = n2['s'] = n1['s']
 
     if(not 'mdot' in n2):
         n2['mdot'] = n1['mdot'] - n3['mdot']

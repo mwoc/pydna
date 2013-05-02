@@ -27,5 +27,6 @@ def mixer(n1,n2,n3):
     prop3 = states.state(n3)
 
     n3['q'] = prop3['q']
+    n3['s'] = prop3['s']
     n3['t'] = prop3['t']
     return True
