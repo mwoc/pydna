@@ -28,10 +28,18 @@ t_steam = 550
 molefrac_tur = 0.5
 molefrac_lpp = 0.2792
 
-p_lo = states.state({'t':30,'q':0,'y':molefrac_lpp,'mdot':1})['p']
-p_me = states.state({'t':40,'q':0,'y':molefrac_tur,'mdot':1})['p']
+p_lo = states.state({'t':30,'q':0,'y':molefrac_lpp})['p']
+p_me = states.state({'t':40,'q':0,'y':molefrac_tur})['p']
 
-#recuperator
+#turbine
+node[1] = {'p':p_hi,'t':t_steam,'y':molefrac_tur,'mdot':1}
+node[2] = {'p':p_lo}
+
+turbine.turbine(node[1],node[2])
+
+#prheat2 (2-4,13-15) further down
+
+#recup
 node[4] = {'t':105,'y':molefrac_tur,'mdot':1,'p':p_lo}
 node[5] = {'t':40}
 
@@ -40,62 +48,60 @@ node[22] = {'t':90}
 
 recup = heatex.pinchHex(node[4],node[5],node[21],node[22],Nseg)
 
-#flash separator
+#flashsep
 node[23] = {}
 node[26] = {}
+
 flashsep.flashsep(node[22],node[26],node[23])
 
 #prheat1
 node[24] = {}
 node[12] = {'p':p_hi,'t':30,'y':molefrac_tur,'mdot':1}
 node[13] = {'t':node[23]['t']-10}
+
 prheat1 = heatex.pinchHex(node[23],node[24],node[12],node[13],Nseg)
 
+#valve1
 node[25] = {'p':p_lo}
+
 valve.valve(node[24],node[25])
 
+#mixer1
 node[6] = {}
 mixer.mixer(node[5],node[25],node[6])
 
+#lpcon
 node[7] = {}
 condenser.condenser(node[6],node[7])
 
+#lppump
 node[8] = {'p':p_me}
 pump.pump(node[7],node[8])
 
+#split1
 node[9] = {}
 splitter.splitter(node[8],node[9],node[21])
 
+#mixer2
 node[10] = {}
 mixer.mixer(node[9],node[26],node[10])
 
+#hpcon
 node[11] = {}
 condenser.condenser(node[10],node[11])
 
-#node 12 already defined
+#hppump
+#node 12 already defined. Iteration might be needed
 pump.pump(node[11],node[12])
 
-node[2] = {'p':p_lo,'mdot':1,'y':molefrac_tur,'t':120}
+#prheat2
+#node 2, 4 and 13 already defined. Iteration might be needed
 node[15] = {'t':node[2]['t']-10}
-
-#node 13 already defined
 prheat2 = heatex.pinchHex(node[2],node[4],node[13],node[15],Nseg)
 
-node[1] = {}
-node[1]['p'] = node[15]['p']
-node[1]['t'] = t_steam
-node[1]['y'] = node[15]['y']
-node[1]['mdot'] = node[15]['mdot']
+#receiver (TODO)
+#outlet should have same properties as node 1. Iteration might be needed
 
-prop1 = states.state(node[1])
-prop1 = states.state(prop1)
-
-node[1]['s'] = prop1['s']
-node[1]['h'] = prop1['h']
-node[1]['q'] = prop1['q']
-
-#node 2 already defined
-turbine.turbine(node[1],node[2])
 
 print('Finished simulation')
 #print to csv file
