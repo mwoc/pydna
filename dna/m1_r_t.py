@@ -26,10 +26,10 @@ p_hi = 100
 t_steam = 550
 
 molefrac_tur = 0.5
-molefrac_lpp = 0.2792
+molefrac_lpp = 0.2487
 
 p_lo = states.state({'t':30,'q':0,'y':molefrac_lpp})['p']
-p_me = states.state({'t':40,'q':0,'y':molefrac_tur})['p']
+p_me = states.state({'t':30,'q':0,'y':molefrac_tur})['p']
 
 #turbine
 node[1] = {'p':p_hi,'t':t_steam,'y':molefrac_tur,'mdot':1}
