@@ -83,7 +83,7 @@ def pinchHex(n1,n2,n3,n4,Nseg):
     n2_ = {'p':n1['p'],'y':n1['y'],'h':n1['h']}
     n3_ = {'p':n3['p'],'y':n3['y'],'h':n4['h']}
 
-    for i in range(Nseg):
+    for i in range(Nseg+1):
 
         n2_['h'] = n1['h'] - dH_H*i
         n3_['h'] = n4['h'] - dH_C*i
@@ -98,3 +98,18 @@ def pinchHex(n1,n2,n3,n4,Nseg):
             dT_min = T2_ - T3_
 
     return {'dTmin':dT_min,'Th':Th,'Tc':Tc}
+
+def condenser(n1,n2):
+
+    n2['p'] = n1['p']
+    n2['y'] = n1['y']
+    n2['mdot'] = n1['mdot']
+    n2['q'] = 0
+
+    prop2 = states.state(n2)
+
+    n2['t'] = prop2['t']
+    n2['h'] = prop2['h']
+    n2['s'] = prop2['s']
+
+    return True
