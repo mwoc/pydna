@@ -42,7 +42,6 @@ def state(node):
 
     x = massToMolar(node['y'])
 
-
     molWmix = float(x[0]) * float(molWNH3) + float(x[1]) * float(molWH2O)
 
     mode = ''
@@ -79,17 +78,17 @@ def state(node):
     prop = rp.flsh(mode, in1, in2, x)
 
     #convert mol to kg, K to C, kPa to hPa
-    prop['p'] = prop['p']/100 # kPa > hPa
-    prop['e'] = prop['e']/molWmix # J/mol > J/kg
-    prop['h'] = prop['h']/molWmix # J/mol*K > J/kg*K
-    prop['D'] = prop['D']*molWmix/1000 # mol/L > kg/m3
-    prop['s'] = prop['s']/molWmix # J/mol*K > J/kg*K
-    prop['t'] = prop['t'] - 273.15 # K > C
-    prop['cv'] = prop['cv']/molWmix
-    prop['cp'] = prop['cp']/molWmix
-    prop['q'] = molarToMass(prop['q'])[0]
-    prop['y'] = molarToMass(prop['x'][0])[0]
-    prop['yvap'] = molarToMass(prop['xvap'][0])[0]
-    prop['yliq'] = molarToMass(prop['xliq'][0])[0]
+    node['p'] = prop['p']/100 # kPa > hPa
+    node['e'] = prop['e']/molWmix # J/mol > J/kg
+    node['h'] = prop['h']/molWmix # J/mol*K > J/kg*K
+    node['D'] = prop['D']*molWmix/1000 # mol/L > kg/m3
+    node['s'] = prop['s']/molWmix # J/mol*K > J/kg*K
+    node['t'] = prop['t'] - 273.15 # K > C
+    node['cv'] = prop['cv']/molWmix
+    node['cp'] = prop['cp']/molWmix
+    node['q'] = molarToMass(prop['q'])[0]
+    node['y'] = molarToMass(prop['x'][0])[0]
+    node['yvap'] = molarToMass(prop['xvap'][0])[0]
+    node['yliq'] = molarToMass(prop['xliq'][0])[0]
 
-    return prop
+    return node

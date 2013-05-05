@@ -5,16 +5,14 @@ def valve(name,n1,n2):
     n1['com1'] = name
     n2['com2'] = name
 
-    prop1 = states.state(n1)
-    n1.update(prop1)
+    states.state(n1)
 
     #isenthalpic
     n2['h'] = n1['h']
     n2['y'] = n1['y']
     n2['mdot'] = n1['mdot']
 
-    prop2 = states.state(n2)
-    n2.update(prop2)
+    states.state(n2)
 
     return True
 
@@ -46,9 +44,7 @@ def mixer(name,n1,n2,n3):
     #internal energy balance
     n3['h'] = (n1['mdot']*n1['h'] + n2['mdot']*n2['h'] )/n3['mdot']
 
-    prop3 = states.state(n3)
-
-    n3.update(prop3)
+    states.state(n3)
 
     return True
 

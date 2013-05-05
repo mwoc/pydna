@@ -98,23 +98,19 @@ class Pinch:
 
             if side == 1:
                 _n2['t'] = _n3['t'] + dT_left
-                prop2 = states.state(_n2)
-                _n2.update(prop2)
+                states.state(_n2)
 
                 _n4['h'] = (_n3['h'] * _n3['mdot'] + (_n1['mdot'] * (_n1['h'] - _n2['h']))) / _n3['mdot']
-                prop4 = states.state(_n4)
-                _n4.update(prop4)
+                states.state(_n4)
 
                 #update looping parameters
                 delta = _n1['t'] - (_n4['t'] + dTmin)
             else:
                 _n4['t'] = _n1['t'] - dT_left
-                prop4 = states.state(_n4)
-                _n4.update(prop4)
+                states.state(_n4)
 
                 _n2['h'] = (_n1['h'] * _n1['mdot'] - (_n3['mdot'] * (_n4['h'] - _n3['h']))) / _n1['mdot']
-                prop2 = states.state(_n2)
-                _n2.update(prop2)
+                states.state(_n2)
 
                 #update looping parameters
                 delta = _n2['t'] - (_n3['t'] + dTmin)
@@ -169,12 +165,10 @@ def pinchHex(name,n1,n2,n3,n4,Nseg,dTmin):
     #find states for all known inputs:
 
     #hot inlet (n1):
-    prop1 = states.state(n1)
-    n1.update(prop1)
+    states.state(n1)
 
     #cold inlet (n3):
-    prop3 = states.state(n3)
-    n3.update(prop3)
+    states.state(n3)
 
     n2['p'] = n1['p']
     n2['y'] = n1['y']
@@ -186,13 +180,11 @@ def pinchHex(name,n1,n2,n3,n4,Nseg,dTmin):
 
     if('t' in n2):
         #hot outlet
-        prop2 = states.state(n2)
-        n2.update(prop2)
+        states.state(n2)
 
     if('t' in n4):
         #cold outlet
-        prop4 = states.state(n4)
-        n4.update(prop4)
+        states.state(n4)
 
     #find any unknown inputs:
 
@@ -218,16 +210,13 @@ def pinchHex(name,n1,n2,n3,n4,Nseg,dTmin):
         #calculate T4 for given mass flow rates and other temperatures
         calc = True
         n4['h'] = (n3['h'] * n3['mdot'] + (n1['mdot'] * (n1['h'] - n2['h']))) / n3['mdot']
-        prop4 = states.state(n4)
-        n4.update(prop4)
+        states.state(n4)
 
     elif(not 't' in n2):
         #calculate T2 for given mass flow rates and other temperatures
         calc = True
         n2['h'] = (n1['h'] * n1['mdot'] - (n3['mdot'] * (n4['h'] - n3['h']))) / n1['mdot']
-        prop2 = states.state(n2)
-        n2.update(prop2)
-
+        states.state(n2)
 
     if(not 'mdot' in n3):
         #calculate m3 for given m1 and temperatures
@@ -264,7 +253,6 @@ def condenser(name,n1,n2):
     n2['mdot'] = n1['mdot']
     n2['q'] = 0
 
-    prop2 = states.state(n2)
-    n2.update(prop2)
+    states.state(n2)
 
     return True
