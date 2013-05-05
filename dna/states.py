@@ -18,7 +18,7 @@ class InputError(Error):
         self.msg = msg
 
 rp.setup('def', 'ammonia', 'water')
-
+rp.setref(hrf='def',ixflag=1)
 molWNH3 = rp.info(1)['wmm']
 molWH2O = rp.info(2)['wmm']
 
@@ -41,7 +41,7 @@ def massToMolar(y):
 def state(node):
 
     x = massToMolar(node['y'])
-    rp.setref(hrf='def',ixflag=1, x0=x)
+
 
     molWmix = float(x[0]) * float(molWNH3) + float(x[1]) * float(molWH2O)
 
@@ -53,6 +53,10 @@ def state(node):
         mode = 'ph'
         in1 = node['p']*100
         in2 = node['h']*molWmix
+    elif('p' in node and 'e' in node):
+        mode = 'pe'
+        in1 = node['p']*100
+        in2 = node['e']*molWmix
     elif('p' in node and 's' in node):
         mode = 'ps'
         in1 = node['p']*100
@@ -74,11 +78,15 @@ def state(node):
 
     prop = rp.flsh(mode, in1, in2, x)
 
+    #convert mol to kg, K to C, kPa to hPa
     prop['p'] = prop['p']/100 # kPa > hPa
+    prop['e'] = prop['e']/molWmix # J/mol > J/kg
     prop['h'] = prop['h']/molWmix # J/mol*K > J/kg*K
     prop['D'] = prop['D']*molWmix/1000 # mol/L > kg/m3
     prop['s'] = prop['s']/molWmix # J/mol*K > J/kg*K
     prop['t'] = prop['t'] - 273.15 # K > C
+    prop['cv'] = prop['cv']/molWmix
+    prop['cp'] = prop['cp']/molWmix
     prop['q'] = molarToMass(prop['q'])[0]
     prop['y'] = molarToMass(prop['x'][0])[0]
     prop['yvap'] = molarToMass(prop['xvap'][0])[0]

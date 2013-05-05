@@ -3,6 +3,7 @@ import scipy
 import scipy.optimize
 import matplotlib.pyplot as plt
 import csv
+import refprop
 
 import m1_r_t
 
@@ -17,50 +18,68 @@ print('Loaded environment. Simulating...')
 #simulation conditions
 cond = {}
 cond['mdot_tur'] = 1
-cond['molefrac_tur'] = 0.8
-cond['molefrac_lpp'] = 0.7168 # < this is a guess. Iteration will find right one
+cond['molefrac_tur'] = 0.6
+cond['molefrac_lpp'] = 0.45297 # < this is a guess. Iteration will find right one
 
 cond['t_steam'] = 450
-cond['t_sat'] = 30
+
+cond['t_con'] = 20
+cond['dT_con'] = 15
+
+cond['pinch_hex'] = 5
+cond['pinch_con'] = 4
+cond['pinch_stor'] = 20
 
 cond['p_hi'] = 100
 
 cond['Nseg'] = 3
 
+#iteration parameters
 i = 0
 x = []
 y = []
-
-result = m1_r_t.simulate(cond)
-
-delta = result['node'][9]['y'] - cond['molefrac_lpp']
+delta = 1
 
 #iterate to find right value for molefrac_lpp
-while abs(delta) > 0.00001 and i < 10:
-    #not reached solution, append previous result to
-    x.append(cond['molefrac_lpp'])
-    y.append(delta)
+while abs(delta) > 0.0001 and i < 10:
 
-    if i > 1:
-        #curve fitting
-        z = numpy.polyfit(x, y, i - 1)
+    if len(x) > 1:
+        #curve fitting.
+        order = min(i - 1, 5)
+
+        z = numpy.polyfit(x, y, order)
         p = scipy.poly1d(z)
 
         zero = scipy.optimize.newton(p,cond['molefrac_lpp'])
 
-        cond['molefrac_lpp'] = zero
+        if(zero < 0):
+            #automatic guess wrong. Do manual guess instead
+            x.pop()
+            old = y.pop()
+            cond['molefrac_lpp'] = result['node'][9]['y'] + delta
 
-    else:
+            print('Using manual guess instead of ',old)
+        else:
+            cond['molefrac_lpp'] = zero
+
+    elif len(x) == 1:
         #manual guess
         cond['molefrac_lpp'] = result['node'][9]['y'] + delta
 
-    #run new simulation
-    print(i,' - new guess: ',cond['molefrac_lpp'])
+    #run simulation
+    print(i+1,' - NH3: ',cond['molefrac_lpp'])
 
-    result = m1_r_t.simulate(cond)
+    try:
+        result = m1_r_t.simulate(cond)
+    except refprop.RefpropError as e:
+        print(e)
+    else:
+        #update looping parameters
+        delta = result['node'][9]['y'] - cond['molefrac_lpp']
 
-    #update looping parameters
-    delta = result['node'][9]['y'] - cond['molefrac_lpp']
+        x.append(cond['molefrac_lpp'])
+        y.append(delta)
+
     i = i + 1
 
 node = result['node']
@@ -71,20 +90,26 @@ print('Finished iteration')
 #print to csv file
 with open('../result.csv','w',newline='',encoding='utf-8') as csvfile:
     print('Exporting results to csv file...')
-    fieldnames = ['Node','com','y','mdot','t','p','h','q','s']
+    fieldnames = ['Node','com2','com1','y','mdot','t','p','h','q','s']
     writer = csv.DictWriter(csvfile,fieldnames=fieldnames,restval='-',delimiter=',',quotechar='"',quoting=csv.QUOTE_MINIMAL)
 
     writer.writerow(dict((fn,fn) for fn in fieldnames))
 
-    for i in sorted(node.keys()):
+    for i in sorted(node.keys(),key=float):
         item = node[i]
 
         #supercritical
         if(item['q'] > 1.000 or item['q'] < 0.000):
             item['q'] = '-'
 
+        if(not 'com1' in item):
+            item['com1'] = '-'
+
+        if(not 'com2' in item):
+            item['com2'] = '-'
+
         item['Node'] = i
-        writer.writerow(item)
+        writer.writerow(dict((k,item[k]) for k in fieldnames))
 
     csvfile.close()
     print('Export done')

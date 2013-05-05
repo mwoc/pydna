@@ -1,11 +1,22 @@
 import states
 
-def flashsep(n1,n2,n3):
+def flashsep(name,n1,n2,n3):
+
+    n1['com1'] = name
+    n2['com2'] = name
+    n3['com2'] = name
+
     #inlet
     prop1 = states.state(n1)
-    n1['h'] = prop1['h']
-    n1['s'] = prop1['s']
-    n1['q'] = prop1['q']
+    n1.update(prop1)
+
+    if prop1['q'] <= 0:
+        prop1['q'] = 0
+        print("Warning: Saturated liquid into separator")
+
+    if prop1['q'] >= 1:
+        prop1['q'] = 1
+        print("Warning: Saturated vapour into separator")
 
     #vapour outlet
     n2['p'] = n1['p']
@@ -13,9 +24,7 @@ def flashsep(n1,n2,n3):
     n2['y'] = prop1['yvap']
 
     prop2 = states.state(n2)
-    n2['h'] = prop2['h']
-    n2['s'] = prop2['s']
-    n2['q'] = prop2['q']
+    n2.update(prop2)
     n2['mdot'] = prop1['q'] * n1['mdot']
 
     #liquid outlet
@@ -24,9 +33,7 @@ def flashsep(n1,n2,n3):
     n3['y'] = prop1['yliq']
 
     prop3 = states.state(n3)
-    n3['h'] = prop3['h']
-    n3['s'] = prop3['s']
-    n3['q'] = prop3['q']
+    n3.update(prop3)
     n3['mdot'] = (1-prop1['q']) * n1['mdot']
 
     return True
