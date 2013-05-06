@@ -1,38 +1,47 @@
 import states
+import component
 
-def flashsep(name,n1,n2,n3):
+class FlashSep(component.Component):
+    def nodes(self,in1,out1,out2):
+        self.addInlet(in1)
+        self.addOutlet(out1)
+        self.addOutlet(out2)
+        return self
 
-    n1['com1'] = name
-    n2['com2'] = name
-    n3['com2'] = name
+    def calc(self):
+        n = self.getNodes()
 
-    #inlet
-    states.state(n1)
+        n1 = n['i'][0]
+        n2 = n['o'][0]
+        n3 = n['o'][1]
 
-    flowFrac = n1['q']
+        #inlet
+        states.state(n1)
 
-    if flowFrac <= 0:
-        flowFrac = 0
-        print("Warning: Saturated liquid into separator")
+        flowFrac = n1['q']
 
-    if flowFrac >= 1:
-        flowFrac = 1
-        print("Warning: Saturated vapour into separator")
+        if flowFrac <= 0:
+            flowFrac = 0
+            print("Warning: Saturated liquid into separator")
 
-    n2['mdot'] = flowFrac * n1['mdot']
-    n3['mdot'] = (1-flowFrac) * n1['mdot']
+        if flowFrac >= 1:
+            flowFrac = 1
+            print("Warning: Saturated vapour into separator")
 
-    #vapour outlet
-    n2['p'] = n1['p']
-    n2['t'] = n1['t']
-    n2['y'] = n1['yvap']
-    states.state(n2)
+        n2['mdot'] = flowFrac * n1['mdot']
+        n3['mdot'] = (1-flowFrac) * n1['mdot']
 
-    #liquid outlet
-    n3['p'] = n1['p']
-    n3['t'] = n1['t']
-    n3['y'] = n1['yliq']
+        #vapour outlet
+        n2['p'] = n1['p']
+        n2['t'] = n1['t']
+        n2['y'] = n1['yvap']
+        states.state(n2)
 
-    states.state(n3)
+        #liquid outlet
+        n3['p'] = n1['p']
+        n3['t'] = n1['t']
+        n3['y'] = n1['yliq']
 
-    return True
+        states.state(n3)
+
+        return self

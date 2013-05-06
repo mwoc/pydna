@@ -3,8 +3,15 @@ import scipy
 import scipy.optimize
 import numpy
 import refprop
+import component
 
-class Pinch:
+class ConvergenceError(Exception):
+    def __init__(self, value):
+        self.value = value
+    def __str__(self):
+        return repr(self.value)
+
+class PinchCalc:
     def __init__ (self,n1,n2,n3,n4,Nseg,dTmin):
         self.n1 = n1
         self.n2 = n2
@@ -61,6 +68,7 @@ class Pinch:
 
         #iteration params
         delta = 1
+        convergence = 1
         i = 0
         x = []
         y = []
@@ -73,7 +81,7 @@ class Pinch:
         print('Running pinch point iteration, this may take a while...')
 
         #tolerance of 0.01 K is close enough
-        while abs(delta) > 0.01 and i < 20:
+        while abs(delta) > 0.01 and abs(convergence) > 0.0005 and  i < 40:
             #make local copies of input
             _n1 = self.n1.copy()
             _n2 = self.n2.copy()
@@ -83,14 +91,16 @@ class Pinch:
             dT_left = dTmin
 
             if len(x) > 1:
+                convergence = y[-2] - y[-1]
                 #curve fitting, maximum order 3
-                order = min(i - 1, 2)
+                order = min(i - 1, 3)
 
                 z = numpy.polyfit(x, y, order)
                 p = scipy.poly1d(z)
 
                 dT_left = scipy.optimize.newton(p,dT_left)
-            elif len(x) == 1:
+            elif len(x) >= 1:
+                #for fast iteration, be sure to swing far from 0 on both sides
                 if side == 1:
                     dT_left = dT_left - delta
                 else:
@@ -128,7 +138,7 @@ class Pinch:
                     result['pinch'] = self.check(_n1,_n2,_n3,_n4)
                 except refprop.RefpropError as e:
                     #ignore me
-                    raise Exception(e)
+                    print(e)
                     print('Next')
                 else:
                     #calculation succeeded. external delta is not valid anymore,
@@ -138,6 +148,10 @@ class Pinch:
                     y.append(delta)
 
             print('Iteration: ',i,'. Residual: ',y[-1])
+
+        if abs(delta) > 0.01:
+            print(delta,convergence,i)
+            raise ConvergenceError('No convergence reached')
 
         print('Pinch point iteration finished.')
 
@@ -154,105 +168,131 @@ class Pinch:
 
             return result['pinch']
 
-def pinchHex(name,n1,n2,n3,n4,Nseg,dTmin):
+class PinchHex(component.Component):
+    def nodes(self,in1,out1,in2,out2):
+        self.addInlet(in1)
+        self.addInlet(in2)
+        self.addOutlet(out1)
+        self.addOutlet(out2)
 
-    n1['com1'] = name
-    n3['com1'] = name
+        return self
 
-    n2['com2'] = name
-    n4['com2'] = name
+    def calc(self,Nseg,dTmin):
+        n = self.getNodes()
 
-    #find states for all known inputs:
+        n1 = n['i'][0]
+        n2 = n['o'][0]
 
-    #hot inlet (n1):
-    states.state(n1)
+        n3 = n['i'][1]
+        n4 = n['o'][1]
 
-    #cold inlet (n3):
-    states.state(n3)
 
-    n2['p'] = n1['p']
-    n2['y'] = n1['y']
+        #find states for all known inputs:
 
-    n4['p'] = n3['p']
-    n4['y'] = n3['y']
+        #hot inlet (n1):
+        states.state(n1)
 
-    calc = False
+        #cold inlet (n3):
+        states.state(n3)
 
-    if('t' in n2):
-        #hot outlet
-        states.state(n2)
+        n2['p'] = n1['p']
+        n2['y'] = n1['y']
 
-    if('t' in n4):
-        #cold outlet
-        states.state(n4)
+        n4['p'] = n3['p']
+        n4['y'] = n3['y']
 
-    #find any unknown inputs:
+        calc = False
 
-    if(not 't' in n2 and not 't' in n4):
-        #find pinch by iteration, for given mass flow rates and inlet temperatures
-        calc = True
+        if('t' in n2):
+            #hot outlet
+            states.state(n2)
 
-        pincher = Pinch(n1,n2,n3,n4,Nseg,dTmin)
-        #first try one side of the HEX
-        try:
-            pinch = pincher.iterate(side=1)
-        except refprop.RefpropError as e:
-            print('First side failed, trying second. Reason:')
+        if('t' in n4):
+            #cold outlet
+            states.state(n4)
 
-            #if that failed, try from the other
+        #find any unknown inputs:
+
+        if(not 't' in n2 and not 't' in n4):
+            #find pinch by iteration, for given mass flow rates and inlet temperatures
+            calc = True
+
+            pincher = PinchCalc(n1,n2,n3,n4,Nseg,dTmin)
+            #first try one side of the HEX
             try:
-                pinch = pincher.iterate(side=2)
+                pinch = pincher.iterate(side=1)
             except refprop.RefpropError as e:
-                print('Second side iteration also failed.')
-                raise Exception(e)
+                print('First side failed, trying second. Reason:')
 
-    elif(not 't' in n4):
-        #calculate T4 for given mass flow rates and other temperatures
-        calc = True
-        n4['h'] = (n3['h'] * n3['mdot'] + (n1['mdot'] * (n1['h'] - n2['h']))) / n3['mdot']
-        states.state(n4)
+                #if that failed, try from the other
+                try:
+                    pinch = pincher.iterate(side=2)
+                except refprop.RefpropError as e:
+                    print('Second side iteration also failed.')
+                    raise Exception(e)
+            except ConvergenceError as e:
+                print('Convergence failed, trying other side',e)
 
-    elif(not 't' in n2):
-        #calculate T2 for given mass flow rates and other temperatures
-        calc = True
-        n2['h'] = (n1['h'] * n1['mdot'] - (n3['mdot'] * (n4['h'] - n3['h']))) / n1['mdot']
+                try:
+                    pinch = pincher.iterate(side=2)
+                except refprop.RefpropError as e:
+                    print('Second side iteration also failed.')
+                    raise Exception(e)
+
+        elif(not 't' in n4):
+            #calculate T4 for given mass flow rates and other temperatures
+            calc = True
+            n4['h'] = (n3['h'] * n3['mdot'] + (n1['mdot'] * (n1['h'] - n2['h']))) / n3['mdot']
+            states.state(n4)
+
+        elif(not 't' in n2):
+            #calculate T2 for given mass flow rates and other temperatures
+            calc = True
+            n2['h'] = (n1['h'] * n1['mdot'] - (n3['mdot'] * (n4['h'] - n3['h']))) / n1['mdot']
+            states.state(n2)
+
+        if(not 'mdot' in n3):
+            #calculate m3 for given m1 and temperatures
+            calc = True
+            n3['mdot'] = ((n1['h'] - n2['h']) * n1['mdot']) / (n4['h'] - n3['h'])
+
+        elif(not 'mdot' in n1):
+            #calculate m1 for given m3 and temperatures
+            calc = True
+            n1['mdot'] = ((n4['h'] - n3['h']) * n3['mdot']) / (n1['h'] - n2['h'])
+
+        if(calc == False):
+            print('Model overly specified for heatex')
+
+        n2['mdot'] = n1['mdot']
+        n4['mdot'] = n3['mdot']
+
+        #find the pinch point
+        pincher = PinchCalc(n1,n2,n3,n4,Nseg,dTmin)
+        self.pinch = pincher.check(n1,n2,n3,n4)
+
+        if abs(self.pinch['dTmin'] - dTmin) > 0.1:
+            print('Pinch too small or too large')
+
+        return self
+
+class Condenser(component.Component):
+    def nodes(self,in1,out1):
+        self.addInlet(in1)
+        self.addOutlet(out1)
+
+        return self
+
+    def calc(self):
+        n = self.getNodes()
+        n1 = n['i'][0]
+        n2 = n['o'][0]
+
+        n2['p'] = n1['p']
+        n2['y'] = n1['y']
+        n2['mdot'] = n1['mdot']
+        n2['q'] = 0
+
         states.state(n2)
 
-    if(not 'mdot' in n3):
-        #calculate m3 for given m1 and temperatures
-        calc = True
-        n3['mdot'] = ((n1['h'] - n2['h']) * n1['mdot']) / (n4['h'] - n3['h'])
-
-    elif(not 'mdot' in n1):
-        #calculate m1 for given m3 and temperatures
-        calc = True
-        n1['mdot'] = ((n4['h'] - n3['h']) * n3['mdot']) / (n1['h'] - n2['h'])
-
-    if(calc == False):
-        print('Model overly specified for heatex')
-
-    n2['mdot'] = n1['mdot']
-    n4['mdot'] = n3['mdot']
-
-    #find the pinch point
-    pincher = Pinch(n1,n2,n3,n4,Nseg,dTmin)
-    pinch = pincher.check(n1,n2,n3,n4)
-
-    if abs(pinch['dTmin'] - dTmin) > 0.1:
-        print('Pinch too small or too large')
-
-    return pinch
-
-def condenser(name,n1,n2):
-
-    n1['com1'] = name
-    n2['com2'] = name
-
-    n2['p'] = n1['p']
-    n2['y'] = n1['y']
-    n2['mdot'] = n1['mdot']
-    n2['q'] = 0
-
-    states.state(n2)
-
-    return True
+        return self

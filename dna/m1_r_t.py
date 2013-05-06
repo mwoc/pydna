@@ -1,112 +1,108 @@
 import components as comp
 import states
+import model
 
-def simulate(cond):
+class MyModel(model.DnaModel):
 
-    #find these by iteration:
-    # -molefrac_lpp
-    #
+    def update(self,cond):
+        self.cond.update(cond)
 
-    t_sat = cond['t_con'] + cond['pinch_con']
+    def run(self):
+        #find these by iteration:
+        # -molefrac_lpp
+        #
 
-    cond['p_lo'] = states.state({'t':t_sat,'q':0,'y':cond['molefrac_lpp']})['p']
-    cond['p_me'] = states.state({'t':t_sat,'q':0,'y':cond['molefrac_tur']})['p']
+        cond = self.cond
+        result = {}
 
-    cond['tmin_sep'] = states.state({'p':cond['p_me'],'q':0,'y':cond['molefrac_lpp']})['t']
+        t_sat = cond['t_con'] + cond['pinch_con']
 
-    node = {}
-    components = {}
+        p_lo = states.state({'t':t_sat,'q':0,'y':cond['molefrac_lpp']})['p']
+        p_me = states.state({'t':t_sat,'q':0,'y':cond['molefrac_tur']})['p']
 
-    #turbine
-    node[1] = {'p':cond['p_hi'],'t':cond['t_steam'],'y':cond['molefrac_tur'],'mdot':cond['mdot_tur']}
-    node[2] = {'p':cond['p_lo']}
+        #cond['tmin_sep'] = states.state({'p':p_me,'q':0,'y':cond['molefrac_lpp']})['t']
 
-    comp.turbine.turbine('turbine',node[1],node[2])
+        #turbine
+        self.nodes[1] = {'p':cond['p_hi'],'t':cond['t_steam'],'y':cond['molefrac_tur'],'mdot':cond['mdot_tur']}
+        self.nodes[2] = {'p':p_lo}
 
-    #prheat2 (2-6,16-18) further down
+        self.addComponent(comp.turbine.Turbine,'turbine').nodes(1,2).calc()
 
-    #recup - this calculates mdot into separator
-    node[6] = {'y':cond['molefrac_tur'],'mdot':cond['mdot_tur'],'p':cond['p_lo']}
-    node[21] = {'y':cond['molefrac_lpp'],'p':cond['p_me']}
-    node[7] = {}
-    node[22] = {}
+        #prheat2 (2-6,16-18) further down
 
-    #IMPORTANT: mass flow in distillation loop is calculated by recuperator. To prevent iteration
-    # from setting distillation to 0, the heat transfer should be fixed and not depend on fluid properties.
-    # Optimize the model manually for the recuperator component!
+        #recup - this calculates mdot into separator
+        self.nodes[6] = {'y':cond['molefrac_tur'],'mdot':cond['mdot_tur'],'p':p_lo}
+        self.nodes[21] = {'y':cond['molefrac_lpp'],'p':p_me}
+        self.nodes[7] = {}
+        self.nodes[22] = {}
 
-    node[6]['t'] = min(80, node[2]['t'])
+        #IMPORTANT: mass flow in distillation loop is calculated by recuperator. To prevent iteration
+        # from setting distillation to 0, the heat transfer should be fixed and not depend on fluid properties.
+        # Optimize the model manually for the recuperator component!
 
-    node[7]['t'] = t_sat + 10 # < chosen to satisfy pinch
+        self.nodes[6]['t'] = min(90, self.nodes[2]['t'])
 
-    node[21]['t'] = t_sat
+        self.nodes[7]['t'] = t_sat + 13 # < chosen to satisfy pinch
 
-    #beware to not raise temperature too far
-    node[22]['t'] = min(75, node[6]['t'] - cond['pinch_hex'])
+        self.nodes[21]['t'] = t_sat
 
-    components['recup'] = comp.heatex.pinchHex('recup',node[6],node[7],node[21],node[22],cond['Nseg'],cond['pinch_hex'])
+        #beware to not raise temperature too far
+        self.nodes[22]['t'] = min(80, self.nodes[6]['t'] - cond['pinch_hex'])
 
-    #flashsep
-    node[23] = {}
-    node[30] = {}
-    comp.flashsep.flashsep('flashsep',node[22],node[30],node[23])
+        recup = self.addComponent(comp.heatex.PinchHex,'recup').nodes(6,7,21,22).calc(cond['Nseg'],cond['pinch_hex'])
+        result['recup'] = recup.pinch
 
-    #prheat1
-    node[15] = {'p':cond['p_hi'],'y':cond['molefrac_tur'],'mdot':cond['mdot_tur']}
-    node[16] = {}
-    node[28] = {}
+        #flashsep
+        self.addComponent(comp.flashsep.FlashSep,'flashsep').nodes(22,30,23).calc()
 
-    node[15]['t'] = t_sat
-    #node[28]['t'] = node[15]['t']+cond['pinch_hex']
-    components['prheat1'] = comp.heatex.pinchHex('prheat1',node[23],node[28],node[15],node[16],cond['Nseg'],cond['pinch_hex'])
+        #prheat1
+        self.nodes[15] = {'p':cond['p_hi'],'y':cond['molefrac_tur'],'mdot':cond['mdot_tur']}
+        self.nodes[15]['t'] = t_sat
 
-    #valve1
-    node[29] = {'p':cond['p_lo']}
-    comp.control.valve('valve1',node[28],node[29])
+        prheat1 = self.addComponent(comp.heatex.PinchHex,'prheat1').nodes(23,28,15,16).calc(cond['Nseg'],cond['pinch_hex'])
+        result['prheat1'] = prheat1.pinch
 
-    #mixer1
-    node[8] = {}
-    comp.control.mixer('mixer1',node[7],node[29],node[8])
+        #valve1
+        self.nodes[29] = {'p':p_lo}
 
-    #lpcon
-    node[9] = {}
-    comp.heatex.condenser('lpcon',node[8],node[9])
+        self.addComponent(comp.control.Valve,'valve1').nodes(28,29).calc()
 
-    #lppump
-    node[10] = {'p':cond['p_me']}
-    comp.pump.pump('lppump',node[9],node[10])
+        #mixer1
+        self.addComponent(comp.control.Mixer,'mixer1').nodes(7,29,8).calc()
 
-    #split1
-    node[11] = {}
-    comp.control.splitter('split1',node[10],node[11],node[21])
+        #lpcon
+        self.addComponent(comp.heatex.Condenser,'lpcon').nodes(8,9).calc()
 
-    #mixer2
-    node[13] = {}
-    comp.control.mixer('mixer2',node[11],node[30],node[13])
+        #lppump
+        self.nodes[10] = {'p':p_me}
+        self.addComponent(comp.pump.Pump,'lppump').nodes(9,10).calc()
 
-    #hpcon
-    node[14] = {}
-    comp.heatex.condenser('hpcon',node[13],node[14])
+        #split1
+        self.addComponent(comp.control.Splitter,'split1').nodes(10,11,21).calc()
 
-    #hppump
-    #node 15 already defined. Iteration might be needed
-    node['15.1'] = {'p':cond['p_hi']}
-    comp.pump.pump('hppump',node[14],node['15.1'])
+        #mixer2
+        self.addComponent(comp.control.Mixer,'mixer2').nodes(11,30,13).calc()
 
-    #prheat2
-    #node 6 already defined. Iteration might be needed
-    node['6.1'] = {}
+        #hpcon
+        self.addComponent(comp.heatex.Condenser,'hpcon').nodes(13,14).calc()
 
-    #IMPORTANT2: recup and prheat2 share the energy available from the turbine outlet
-    #if outlet temperature too low, do not do heat transfer in prheat2
-    if(node[2]['t'] == node[6]['t']):
-        node['6.1']['t'] = node[2]['t']
+        #hppump
+        #node 15 already defined. Iteration might be needed
+        self.nodes['15.1'] = {'p':cond['p_hi']}
+        self.addComponent(comp.pump.Pump,'hppump').nodes(14,'15.1').calc()
 
-    node[18] = {}
+        #prheat2
+        #node 6 already defined. Iteration might be needed
 
-    components['prheat2'] = comp.heatex.pinchHex('prheat2',node[2],node['6.1'],node[16],node[18],cond['Nseg'],cond['pinch_hex'])
+        #IMPORTANT2: recup and prheat2 share the energy available from the turbine outlet
+        #if outlet temperature too low, do not do heat transfer in prheat2
+        #if(self.nodes[2]['t'] == self.nodes[6]['t']):
+        #    self.nodes['6.1']['t'] = self.nodes[2]['t']
 
-    #receiver (TODO)
-    #outlet should have same properties as node 1. Iteration might be needed
+        prheat2 = self.addComponent(comp.heatex.PinchHex,'prheat2').nodes(2,'6.1',16,18).calc(cond['Nseg'],cond['pinch_hex'])
+        result['prheat2'] = prheat2.pinch
 
-    return {'node':node,'com':components}
+        #receiver (TODO)
+        #outlet should have same properties as node 1. Iteration might be needed
+
+        return {'node':self.nodes,'com':result}

@@ -1,20 +1,28 @@
 import states
+import component
 
-def pump(name,n1,n2):
+class Pump(component.Component):
+    def nodes(self,in1,out1):
+        self.addInlet(in1)
+        self.addOutlet(out1)
 
-    n1['com1'] = name
-    n2['com2'] = name
+        return self
 
-    states.state(n1)
+    def calc(self):
+        n = self.getNodes()
+        n1 = n['i'][0]
+        n2 = n['o'][0]
 
-    n2['y'] = n1['y']
-    n2['mdot'] = n1['mdot']
+        states.state(n1)
 
-    #isentropic for now:
-    n2['s'] = n1['s']
+        n2['y'] = n1['y']
+        n2['mdot'] = n1['mdot']
 
-    #density kg/m3 to specific volume m3/kg:
-    #n2['h'] = n1['h'] - (1/prop1['D'])*(n1['p']*100 - n2['p']*100)
-    states.state(n2)
+        #isentropic for now:
+        n2['s'] = n1['s']
 
-    return True
+        #density kg/m3 to specific volume m3/kg:
+        #n2['h'] = n1['h'] - (1/prop1['D'])*(n1['p']*100 - n2['p']*100)
+        states.state(n2)
+
+        return self

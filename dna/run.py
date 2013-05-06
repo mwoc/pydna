@@ -18,8 +18,8 @@ print('Loaded environment. Simulating...')
 #simulation conditions
 cond = {}
 cond['mdot_tur'] = 1
-cond['molefrac_tur'] = 0.6
-cond['molefrac_lpp'] = 0.45297 # < this is a guess. Iteration will find right one
+cond['molefrac_tur'] = 0.5
+cond['molefrac_lpp'] = 0.51 # < this is a guess. Iteration will find right one
 
 cond['t_steam'] = 450
 
@@ -30,7 +30,7 @@ cond['pinch_hex'] = 5
 cond['pinch_con'] = 4
 cond['pinch_stor'] = 20
 
-cond['p_hi'] = 100
+cond['p_hi'] = 110
 
 cond['Nseg'] = 3
 
@@ -69,8 +69,10 @@ while abs(delta) > 0.0001 and i < 10:
     #run simulation
     print(i+1,' - NH3: ',cond['molefrac_lpp'])
 
+    model = m1_r_t.MyModel(cond)
+
     try:
-        result = m1_r_t.simulate(cond)
+        result = model.run()
     except refprop.RefpropError as e:
         print(e)
     else:
