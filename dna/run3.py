@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import csv
 import refprop
 
-import m1_r_t
+import m3_rs_t
 
 def round_down(num, divisor):
     return num - (num%divisor)
@@ -19,7 +19,7 @@ print('Loaded environment. Simulating...')
 cond = {}
 cond['mdot_tur'] = 1
 cond['molefrac_tur'] = 0.5
-cond['molefrac_lpp'] = 0.304 # < this is a guess. Iteration will find right one
+cond['molefrac_lpp'] = 0.51 # < this is a guess. Iteration will find right one
 
 cond['t_steam'] = 450
 
@@ -69,10 +69,8 @@ while abs(delta) > 0.0001 and i < 10:
     #run simulation
     print(i+1,' - NH3: ',cond['molefrac_lpp'])
 
-    model = m1_r_t.MyModel(cond)
-
     try:
-        result = model.run()
+        result = m3_rs_t.simulate(cond)
     except refprop.RefpropError as e:
         print(e)
     else:
@@ -92,7 +90,7 @@ print('Finished iteration')
 #print to csv file
 with open('../result.csv','w',newline='',encoding='utf-8') as csvfile:
     print('Exporting results to csv file...')
-    fieldnames = ['Node','from','to','y','mdot','t','p','h','q','s']
+    fieldnames = ['Node','com2','com1','y','mdot','t','p','h','q','s']
     writer = csv.DictWriter(csvfile,fieldnames=fieldnames,restval='-',delimiter=',',quotechar='"',quoting=csv.QUOTE_MINIMAL)
 
     writer.writerow(dict((fn,fn) for fn in fieldnames))
@@ -104,11 +102,11 @@ with open('../result.csv','w',newline='',encoding='utf-8') as csvfile:
         if(item['q'] > 1.000 or item['q'] < 0.000):
             item['q'] = '-'
 
-        if(not 'from' in item):
-            item['from'] = '-'
+        if(not 'com1' in item):
+            item['com1'] = '-'
 
-        if(not 'to' in item):
-            item['to'] = '-'
+        if(not 'com2' in item):
+            item['com2'] = '-'
 
         item['Node'] = i
         writer.writerow(dict((k,item[k]) for k in fieldnames))
