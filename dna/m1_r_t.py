@@ -1,4 +1,4 @@
-import components as comp
+import components as com
 import states
 import model
 
@@ -11,33 +11,33 @@ class MyModel(model.DnaModel):
         '''
 
         ### Main loop ###
-        self.addComponent(comp.Turbine, 'turbine').nodes(1, 2)
+        self.addComponent(com.Turbine, 'turbine').nodes(1, 2)
 
-        self.addComponent(comp.PinchHex, 'prheat2').nodes(2, 6, 16, 18)
+        self.addComponent(com.PinchHex, 'prheat2').nodes(2, 6, 16, 18)
 
-        self.addComponent(comp.PinchHex, 'recup').nodes('6.1', 7, 21, 22)
+        self.addComponent(com.PinchHex, 'recup').nodes('6.1', 7, 21, 22)
 
-        self.addComponent(comp.Mixer, 'mixer1').nodes(7, 29, 8)
+        self.addComponent(com.Mixer, 'mixer1').nodes(7, 29, 8)
 
-        self.addComponent(comp.Condenser, 'lpcon').nodes(8, 9)
+        self.addComponent(com.Condenser, 'lpcon').nodes(8, 9)
 
-        self.addComponent(comp.Pump, 'lppump').nodes(9, 10)
+        self.addComponent(com.Pump, 'lppump').nodes(9, 10)
 
-        self.addComponent(comp.Splitter, 'split1').nodes(10, 11, 21)
+        self.addComponent(com.Splitter, 'split1').nodes(10, 11, 21)
 
-        self.addComponent(comp.Mixer, 'mixer2').nodes(11, 30, 13)
+        self.addComponent(com.Mixer, 'mixer2').nodes(11, 30, 13)
 
-        self.addComponent(comp.Condenser, 'hpcon').nodes(13, 14)
+        self.addComponent(com.Condenser, 'hpcon').nodes(13, 14)
 
-        self.addComponent(comp.Pump, 'hppump').nodes(14 ,15)
+        self.addComponent(com.Pump, 'hppump').nodes(14 ,15)
 
         ### Distillation loop ###
 
-        self.addComponent(comp.FlashSep, 'flashsep').nodes(22, 30, 23)
+        self.addComponent(com.FlashSep, 'flashsep').nodes(22, 30, 23)
 
-        self.addComponent(comp.PinchHex, 'prheat1').nodes(23, 28, '15.1', 16)
+        self.addComponent(com.PinchHex, 'prheat1').nodes(23, 28, '15.1', 16)
 
-        self.addComponent(comp.Valve, 'valve1').nodes(28, 29)
+        self.addComponent(com.Valve, 'valve1').nodes(28, 29)
 
         return self
 
