@@ -13,8 +13,15 @@ class MyModel(model.DnaModel):
         ### Main loop ###
         self.addComponent(com.Turbine, 'turbine').nodes(1, 2)
 
-        self.addComponent(com.PinchHex, 'prheat2').nodes(2, 6, 16, 18)
+        self.addComponent(com.Splitter, 'splitprh2').nodes(2, 4, 51)
 
+        self.addComponent(com.PinchHex, 'prheat2r').nodes(4, 5, 16, 18)
+
+        self.addComponent(com.PinchHex, 'prheat2s').nodes(51, 52, 44, 45)
+
+        self.addComponent(com.Mixer, 'mixprh2').nodes(5, 52, 6)
+
+            #note: get node 6 right with iteration
         self.addComponent(com.PinchHex, 'recup').nodes('6.1', 7, 21, 22)
 
         self.addComponent(com.Mixer, 'mixer1').nodes(7, 29, 8)
@@ -25,17 +32,38 @@ class MyModel(model.DnaModel):
 
         self.addComponent(com.Splitter, 'split1').nodes(10, 11, 21)
 
-        self.addComponent(com.Mixer, 'mixer2').nodes(11, 30, 13)
+        self.addComponent(com.Splitter, 'split2l').nodes(11, 12, 40)
 
-        self.addComponent(com.Condenser, 'hpcon').nodes(13, 14)
+        self.addComponent(com.Splitter, 'split2r').nodes(30, 31, 32)
 
-        self.addComponent(com.Pump, 'hppump').nodes(14 ,15)
+        ### Receiver loop ###
+        self.addComponent(com.Mixer, 'mixer2r').nodes(12, 31, 13)
 
-        ### Distillation loop ###
+        self.addComponent(com.Condenser, 'hpconr').nodes(13, 14)
+
+        self.addComponent(com.Pump, 'hppumpr').nodes(14, 15)
+
+        ### Storage loop ###
+
+        self.addComponent(com.Mixer, 'mixer2s').nodes(40, 32, 41)
+
+        self.addComponent(com.Condenser, 'hpcons').nodes(41, 42)
+
+        self.addComponent(com.Pump, 'hppumps').nodes(42, 43)
+
+        ### Distillation loop + prheat1 ###
 
         self.addComponent(com.FlashSep, 'flashsep').nodes(22, 30, 23)
 
-        self.addComponent(com.PinchHex, 'prheat1').nodes(23, 28, '15.1', 16)
+        self.addComponent(com.Splitter, 'splitprh1').nodes(23, 24, 26)
+
+            #note: get node 15 right with iteration
+        self.addComponent(com.PinchHex, 'prheat1r').nodes(24, 25, '15.1', 16)
+
+            #note: get node 43 right with iteration
+        self.addComponent(com.PinchHex, 'prheat1s').nodes(26, 27, '43.1', 44)
+
+        self.addComponent(com.Mixer, 'mixerprh1').nodes(25, 27, 28)
 
         self.addComponent(com.Valve, 'valve1').nodes(28, 29)
 
@@ -45,96 +73,112 @@ class MyModel(model.DnaModel):
         '''
         This can run some of the components initialized in self.init()
         Note that not all components have to be used, but if you skip some,
-        be sure to pass results past the skipped nodes manually
+        be sure to copy() results past the skipped nodes manually
         '''
 
-        components = self.components
-        cond = self.cond
-        result = {}
-
-        t_sat = cond['t_con'] + cond['pinch_con']
-
-        p_lo = states.state({'t':t_sat,'q':0,'y':cond['molefrac_lpp']})['p']
-        p_me = states.state({'t':t_sat,'q':0,'y':cond['molefrac_tur']})['p']
-
-        #cond['tmin_sep'] = states.state({'p':p_me,'q':0,'y':cond['molefrac_lpp']})['t']
-
-        #turbine
-        self.nodes[1].update({'p':cond['p_hi'],'t':cond['t_steam'],'y':cond['molefrac_tur'],'mdot':cond['mdot_tur']})
-        self.nodes[2].update({'p':p_lo})
-
-        components['turbine'].calc(0.8)
-
-        #prheat2 (2-6,16-18) further down
-
-        #recup - this calculates mdot into separator
-        self.nodes['6.1'].update({'y':cond['molefrac_tur'],'mdot':cond['mdot_tur'],'p':p_lo})
-        self.nodes[21].update({'y':cond['molefrac_lpp'],'p':p_me})
+        #node 6 already defined. Iteration might be needed
+        #node 15 already defined. Iteration might be needed
+        #receiver: outlet should have same properties as node 1. Iteration might be needed
 
         #IMPORTANT: mass flow in distillation loop is calculated by recuperator. To prevent iteration
         # from setting distillation to 0, the heat transfer should be fixed and not depend on fluid properties.
         # Optimize the model manually for the recuperator component!
 
+        #environment params
+        components = self.components
+        cond = self.cond
+        result = {}
+
+        #simulation params
+        t_sat = cond['t_con'] + cond['pinch_con']
+        p_lo = states.state({
+            'media': 'kalina',
+            'y': cond['molefrac_lpp'],
+            't': t_sat,
+            'q': 0
+        })['p']
+        p_me = states.state({
+            'media': 'kalina',
+            'y': cond['molefrac_tur'],
+            't': t_sat,
+            'q': 0
+        })['p']
+
+        ### Main loop ###
+        self.nodes[1].update({
+            'media': 'kalina',
+            'y': cond['molefrac_tur']
+            'mdot': cond['mdot_tur'],
+            'p': cond['p_hi'],
+            't': cond['t_steam'],
+        })
+        self.nodes[2].update({'p': p_lo})
+
+        components['turbine'].calc(0.8)
+
+        self.nodes[4] = self.nodes[2].copy()   #skipping prheat3 and splitprh1
+
+        #Fixing state of node 6,7,21,22 as balancing point of model
+        self.nodes['6.1'].update({
+            'media': 'kalina',
+            'y': cond['molefrac_tur'],
+            'mdot': cond['mdot_tur'],
+            'p': p_lo
+        })
+        self.nodes[21].update({
+            'media': 'kalina',
+            'y': cond['molefrac_lpp'],
+            'p': p_me
+        })
+
         self.nodes['6.1']['t'] = min(90, self.nodes[2]['t'])
-
         self.nodes[7]['t'] = t_sat + 13 # < chosen to satisfy pinch
-
         self.nodes[21]['t'] = t_sat
-
-        #beware to not raise temperature too far
-        self.nodes[22]['t'] = min(70, self.nodes['6.1']['t'] - cond['pinch_hex'])
+        self.nodes[22]['t'] = min(70, self.nodes['6.1']['t'] - cond['pinch_hex']) # < not raise temperature too far
 
         components['recup'].calc(cond['Nseg'], cond['pinch_hex'])
 
-        #flashsep
         components['flashsep'].calc()
 
-        #prheat1
-        self.nodes['15.1'].update({'p':cond['p_hi'],'y':cond['molefrac_tur'],'mdot':cond['mdot_tur']})
+        self.nodes[24] = self.nodes[23].copy() #skipping splitprh2
+
+        self.nodes['15.1'].update({
+            'media': 'kalina',
+            'y': cond['molefrac_tur'],
+            'mdot': cond['mdot_tur'],
+            'p': cond['p_hi']
+        })
         self.nodes['15.1']['t'] = t_sat
 
-        components['prheat1'].calc(cond['Nseg'], cond['pinch_hex'])
+        components['prheat1r'].calc(cond['Nseg'], cond['pinch_hex'])
 
-        #valve1
-        self.nodes[29].update({'p':p_lo})
+        self.nodes[28] = self.nodes[25].copy() #skipping mixerprh2
 
+        self.nodes[29].update({'p': p_lo})   #have to tell valve how far to drop pressure
         components['valve1'].calc()
 
-        #mixer1
+        self.nodes[31] = self.nodes[30].copy() #skipping split2r
+
         components['mixer1'].calc()
 
-        #lpcon
         components['lpcon'].calc()
 
-        #lppump
-        self.nodes[10].update({'p':p_me})
+        self.nodes[10].update({'p': p_me})   #have to tell pump how far to increase pressure
         components['lppump'].calc()
 
-        #split1
         components['split1'].calc()
 
-        #mixer2
-        components['mixer2'].calc()
+        self.nodes[12] = self.nodes[11].copy() #skipping split2l
 
-        #hpcon
-        components['hpcon'].calc()
+        ### Receiver loop ###
 
-        #hppump
-        #node 15 already defined. Iteration might be needed
-        self.nodes[15].update({'p':cond['p_hi']})
-        components['hppump'].calc()
+        components['mixer2r'].calc()
 
-        #prheat2
-        #node 6 already defined. Iteration might be needed
+        components['hpconr'].calc()
 
-        #IMPORTANT2: recup and prheat2 share the energy available from the turbine outlet
-        #if outlet temperature too low, do not do heat transfer in prheat2
-        #if(self.nodes[2]['t'] == self.nodes[6]['t']):
-        #    self.nodes['6.1']['t'] = self.nodes[2]['t']
+        self.nodes[15].update({'p': cond['p_hi']})   #have to tell pump how far to increase pressure
+        components['hppumpr'].calc()
 
-        components['prheat2'].calc(cond['Nseg'], cond['pinch_hex'])
-
-        #receiver (TODO)
-        #outlet should have same properties as node 1. Iteration might be needed
+        components['prheat2r'].calc(cond['Nseg'], cond['pinch_hex'])
 
         return self

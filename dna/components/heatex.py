@@ -12,7 +12,7 @@ class ConvergenceError(Exception):
         return repr(self.value)
 
 class PinchCalc:
-    def __init__ (self,n1,n2,n3,n4,Nseg,dTmin):
+    def __init__ (self, n1, n2, n3, n4, Nseg, dTmin):
         self.n1 = n1
         self.n2 = n2
         self.n3 = n3
@@ -20,7 +20,7 @@ class PinchCalc:
         self.Nseg = Nseg
         self.dTmin = dTmin
 
-    def check(self,n1,n2,n3,n4):
+    def check(self, n1, n2, n3, n4):
 
         dH_H = (n1['h']-n2['h'])/self.Nseg
         dH_C = (n4['h']-n3['h'])/self.Nseg
@@ -28,14 +28,27 @@ class PinchCalc:
         dT_left = n1['t'] - n4['t']
         dT_right = n2['t'] - n3['t']
 
-        dT_pinch = min(dT_left,dT_right)
+        dT_pinch = min(dT_left, dT_right)
         pinch_pos = 0
 
         Th = []
         Tc = []
 
-        n2_ = {'p':n1['p'],'y':n1['y'],'h':n1['h']}
-        n3_ = {'p':n3['p'],'y':n3['y'],'h':n4['h']}
+        n2_ = {
+            'media': n1['media'],
+            'y': n1['y'],
+            'cp': n1['cp'],
+            'p': n1['p'],
+            'h': n1['h']
+        }
+
+        n3_ = {
+            'media': n3['media'],
+            'y': n3['y'],
+            'cp': n3['cp'],
+            'p': n3['p'],
+            'h': n4['h'] #note n4 usage
+        }
 
         for i in range(self.Nseg+1):
 
@@ -52,9 +65,9 @@ class PinchCalc:
                 pinch_pos = i
                 dT_pinch = T2_ - T3_
 
-        return {'dTmin':dT_pinch,'Th':Th,'Tc':Tc,'percent':pinch_pos / self.Nseg}
+        return {'dTmin':dT_pinch, 'Th':Th, 'Tc':Tc, 'percent':pinch_pos / self.Nseg}
 
-    def iterate(self,side=1):
+    def iterate(self, side=1):
         '''
         Try to find optimal configuration of heat exchanger which satisfies
         pinch point and has the exergy loss as low as possible.
@@ -99,7 +112,7 @@ class PinchCalc:
                 z = numpy.polyfit(x, y, order)
                 p = scipy.poly1d(z)
 
-                dT_left = scipy.optimize.newton(p,dT_left)
+                dT_left = scipy.optimize.newton(p, dT_left)
 
 
             if len(x) == 1:
@@ -139,7 +152,7 @@ class PinchCalc:
                 #it internally
                 try:
                     #check internal pinch too
-                    result['pinch'] = self.check(_n1,_n2,_n3,_n4)
+                    result['pinch'] = self.check(_n1, _n2, _n3, _n4)
                 except refprop.RefpropError as e:
                     #ignore me
                     print(e)
@@ -151,10 +164,10 @@ class PinchCalc:
                     delta = result['pinch']['dTmin'] - dTmin
                     y.append(delta)
 
-            print('Iteration: ',i,'. Residual: ',y[-1])
+            print('Iteration: ', i, '. Residual: ', y[-1])
 
         if abs(delta) > 0.1:
-            print(delta,convergence,i)
+            print(delta, convergence, i)
             raise ConvergenceError('No convergence reached')
 
         print('Pinch point iteration finished.')
@@ -164,7 +177,7 @@ class PinchCalc:
             return False
         else:
             print('Update your model with these outlet temperatures:')
-            print('T2: ',_n2['t'],' T4: ',_n4['t'])
+            print('T2: ', _n2['t'], ' T4: ', _n4['t'])
             self.n1.update(_n1)
             self.n2.update(_n2)
             self.n3.update(_n3)
@@ -173,7 +186,7 @@ class PinchCalc:
             return result['pinch']
 
 class PinchHex(component.Component):
-    def nodes(self,in1,out1,in2,out2):
+    def nodes(self, in1, out1, in2, out2):
         self.addInlet(in1)
         self.addInlet(in2)
         self.addOutlet(out1)
@@ -181,7 +194,7 @@ class PinchHex(component.Component):
 
         return self
 
-    def calc(self,Nseg,dTmin):
+    def calc(self, Nseg = 11, dTmin = 5):
         n = self.getNodes()
 
         n1 = n['i'][0]
@@ -193,35 +206,36 @@ class PinchHex(component.Component):
 
         #find states for all known inputs:
 
-        #hot inlet (n1):
-        states.state(n1)
+        states.state(n1) #hot inlet
 
-        #cold inlet (n3):
-        states.state(n3)
+        states.state(n3) #cold inlet
 
         n2['p'] = n1['p']
         n2['y'] = n1['y']
+        n2['media'] = n1['media']
+        n2['cp'] = n1['cp']
 
         n4['p'] = n3['p']
         n4['y'] = n3['y']
+        n4['media'] = n3['media']
+        n4['cp'] = n3['cp']
 
         calc = False
 
         if('t' in n2):
-            #hot outlet
-            states.state(n2)
+            states.state(n2) #hot outlet
 
         if('t' in n4):
-            #cold outlet
-            states.state(n4)
+            states.state(n4) #cold outlet
+
+        #initiate pincher for later use
+        pincher = PinchCalc(n1, n2, n3, n4, Nseg, dTmin)
 
         #find any unknown inputs:
-
         if(not 't' in n2 and not 't' in n4):
             #find pinch by iteration, for given mass flow rates and inlet temperatures
             calc = True
 
-            pincher = PinchCalc(n1,n2,n3,n4,Nseg,dTmin)
             #first try one side of the HEX
             try:
                 pinch = pincher.iterate(side=1)
@@ -235,7 +249,7 @@ class PinchHex(component.Component):
                     print('Second side iteration also failed.')
                     raise Exception(e)
             except ConvergenceError as e:
-                print('Convergence failed, trying other side',e)
+                print('Convergence failed, trying other side', e)
 
                 try:
                     pinch = pincher.iterate(side=2)
@@ -272,8 +286,7 @@ class PinchHex(component.Component):
         n4['mdot'] = n3['mdot']
 
         #find the pinch point
-        pincher = PinchCalc(n1,n2,n3,n4,Nseg,dTmin)
-        pinch = pincher.check(n1,n2,n3,n4)
+        pinch = pincher.check(n1, n2, n3, n4)
 
         self.storeResult(pinch)
 
@@ -283,7 +296,7 @@ class PinchHex(component.Component):
         return self
 
 class Condenser(component.Component):
-    def nodes(self,in1,out1):
+    def nodes(self, in1, out1):
         self.addInlet(in1)
         self.addOutlet(out1)
 

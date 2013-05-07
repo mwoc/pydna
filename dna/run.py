@@ -19,7 +19,7 @@ print('Loaded environment. Simulating...')
 cond = {}
 cond['mdot_tur'] = 1
 cond['molefrac_tur'] = 0.5
-cond['molefrac_lpp'] = 0.3 # < this is a guess. Iteration will find right one
+cond['molefrac_lpp'] = 0.29715426447 # < this is a guess. Iteration will find right one
 
 cond['t_steam'] = 450
 
@@ -30,7 +30,7 @@ cond['pinch_hex'] = 5
 cond['pinch_con'] = 4
 cond['pinch_stor'] = 20
 
-cond['p_hi'] = 110
+cond['p_hi'] = 100
 
 cond['Nseg'] = 5
 
@@ -56,7 +56,7 @@ while abs(delta) > 0.0001 and i < 10:
             #automatic guess wrong. Do manual guess instead
             x.pop()
             old = y.pop()
-            cond['molefrac_lpp'] = model.nodes[9]['y'] + delta
+            cond['molefrac_lpp'] = model.nodes[8]['y'] + delta
 
             print('Using manual guess instead of ',old)
         else:
@@ -64,7 +64,7 @@ while abs(delta) > 0.0001 and i < 10:
 
     elif len(x) == 1:
         #manual guess
-        cond['molefrac_lpp'] = model.nodes[9]['y'] + delta
+        cond['molefrac_lpp'] = model.nodes[8]['y'] + delta
 
     #run simulation
     print(i+1,' - NH3: ',cond['molefrac_lpp'])
@@ -102,8 +102,10 @@ with open('../result.csv','w',newline='',encoding='utf-8') as csvfile:
     for i in sorted(node.keys(),key=float):
         item = node[i]
 
+        print(item)
+
         #supercritical
-        if(item['q'] > 1.000 or item['q'] < 0.000):
+        if('q' in item and (item['q'] > 1.000 or item['q'] < 0.000)):
             item['q'] = '-'
 
         if(not 'from' in item):
@@ -113,7 +115,7 @@ with open('../result.csv','w',newline='',encoding='utf-8') as csvfile:
             item['to'] = '-'
 
         item['Node'] = i
-        writer.writerow(dict((k,item[k]) for k in fieldnames))
+        writer.writerow(dict((k,item[k] if k in item else '-') for k in fieldnames))
 
     csvfile.close()
     print('Export done')
@@ -134,31 +136,31 @@ plt.savefig('../recup.png')
 plt.close()
 
 #plot prheat1
-x = numpy.linspace(0,1,len(com['prheat1']['Th']))
-miny = round_down(min(min(com['prheat1']['Tc']),min(com['prheat1']['Th']))-1,10)
-maxy = round_up(max(max(com['prheat1']['Tc']),max(com['prheat1']['Th']))+1,10)
-plt.plot(x, com['prheat1']['Th'], 'r->',label='Hot')
-plt.plot(x, com['prheat1']['Tc'], 'b-<',label='Cold')
+x = numpy.linspace(0,1,len(com['prheat1r']['Th']))
+miny = round_down(min(min(com['prheat1r']['Tc']),min(com['prheat1r']['Th']))-1,10)
+maxy = round_up(max(max(com['prheat1']['Tc']),max(com['prheat1r']['Th']))+1,10)
+plt.plot(x, com['prheat1r']['Th'], 'r->',label='Hot')
+plt.plot(x, com['prheat1r']['Tc'], 'b-<',label='Cold')
 plt.xlabel('Location in HEX')
 plt.ylabel(r'Temperature [$^\circ$C]')
-plt.title('prheat1 - Hot/cold flows through HEX - pinch: '+str(round(com['prheat1']['dTmin'],2))+' [K]')
+plt.title('prheat1r - Hot/cold flows through HEX - pinch: '+str(round(com['prheat1r']['dTmin'],2))+' [K]')
 plt.ylim(miny,maxy)
 plt.grid(True)
-plt.savefig('../prheat1.png')
+plt.savefig('../prheat1r.png')
 plt.close()
 
 #plot prheat2
-x = numpy.linspace(0,1,len(com['prheat2']['Th']))
-miny = round_down(min(min(com['prheat2']['Tc']),min(com['prheat2']['Th']))-1,10)
-maxy = round_up(max(max(com['prheat2']['Tc']),max(com['prheat2']['Th']))+1,10)
-plt.plot(x, com['prheat2']['Th'], 'r->',label='Hot')
-plt.plot(x, com['prheat2']['Tc'], 'b-<',label='Cold')
+x = numpy.linspace(0,1,len(com['prheat2r']['Th']))
+miny = round_down(min(min(com['prheat2r']['Tc']),min(com['prheat2r']['Th']))-1,10)
+maxy = round_up(max(max(com['prheat2r']['Tc']),max(com['prheat2r']['Th']))+1,10)
+plt.plot(x, com['prheat2r']['Th'], 'r->',label='Hot')
+plt.plot(x, com['prheat2r']['Tc'], 'b-<',label='Cold')
 plt.xlabel('Location in HEX')
 plt.ylabel(r'Temperature [$^\circ$C]')
-plt.title('prheat2 - Hot/cold flows through HEX - pinch: '+str(round(com['prheat2']['dTmin'],2))+' [K]')
+plt.title('prheat2r - Hot/cold flows through HEX - pinch: '+str(round(com['prheat2r']['dTmin'],2))+' [K]')
 plt.ylim(miny,maxy)
 plt.grid(True)
-plt.savefig('../prheat2.png')
+plt.savefig('../prheat2r.png')
 plt.close()
 
 #plot
