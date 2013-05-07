@@ -25,6 +25,9 @@ class Component:
 
         self.outlets.append(index)
 
+    def storeResult(self,data):
+        self.model.result[self.name] = data
+
     def getNodes(self):
         #inlet nodes:
         nodes = {}

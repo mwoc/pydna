@@ -4,14 +4,51 @@ import model
 
 class MyModel(model.DnaModel):
 
-    def update(self,cond):
-        self.cond.update(cond)
+    def init(self):
+        '''
+        Define all components and their nodes in their natural order
+        Model takes care of node creation
+        '''
+
+        ### Main loop ###
+        self.addComponent(comp.turbine.Turbine, 'turbine').nodes(1, 2)
+
+        self.addComponent(comp.heatex.PinchHex, 'prheat2').nodes(2, 6, 16, 18)
+
+        self.addComponent(comp.heatex.PinchHex, 'recup').nodes('6.1', 7, 21, 22)
+
+        self.addComponent(comp.control.Mixer, 'mixer1').nodes(7, 29, 8)
+
+        self.addComponent(comp.heatex.Condenser, 'lpcon').nodes(8, 9)
+
+        self.addComponent(comp.pump.Pump, 'lppump').nodes(9, 10)
+
+        self.addComponent(comp.control.Splitter, 'split1').nodes(10, 11, 21)
+
+        self.addComponent(comp.control.Mixer, 'mixer2').nodes(11, 30, 13)
+
+        self.addComponent(comp.heatex.Condenser, 'hpcon').nodes(13, 14)
+
+        self.addComponent(comp.pump.Pump, 'hppump').nodes(14 ,15)
+
+        ### Distillation loop ###
+
+        self.addComponent(comp.flashsep.FlashSep, 'flashsep').nodes(22, 30, 23)
+
+        self.addComponent(comp.heatex.PinchHex, 'prheat1').nodes(23, 28, '15.1', 16)
+
+        self.addComponent(comp.control.Valve, 'valve1').nodes(28, 29)
+
+        return self
 
     def run(self):
-        #find these by iteration:
-        # -molefrac_lpp
-        #
+        '''
+        This can run some of the components initialized in self.init()
+        Note that not all components have to be used, but if you skip some,
+        be sure to pass results past the skipped nodes manually
+        '''
 
+        components = self.components
         cond = self.cond
         result = {}
 
@@ -23,73 +60,69 @@ class MyModel(model.DnaModel):
         #cond['tmin_sep'] = states.state({'p':p_me,'q':0,'y':cond['molefrac_lpp']})['t']
 
         #turbine
-        self.nodes[1] = {'p':cond['p_hi'],'t':cond['t_steam'],'y':cond['molefrac_tur'],'mdot':cond['mdot_tur']}
-        self.nodes[2] = {'p':p_lo}
+        self.nodes[1].update({'p':cond['p_hi'],'t':cond['t_steam'],'y':cond['molefrac_tur'],'mdot':cond['mdot_tur']})
+        self.nodes[2].update({'p':p_lo})
 
-        self.addComponent(comp.turbine.Turbine,'turbine').nodes(1,2).calc()
+        components['turbine'].calc(0.8)
 
         #prheat2 (2-6,16-18) further down
 
         #recup - this calculates mdot into separator
-        self.nodes[6] = {'y':cond['molefrac_tur'],'mdot':cond['mdot_tur'],'p':p_lo}
-        self.nodes[21] = {'y':cond['molefrac_lpp'],'p':p_me}
-        self.nodes[7] = {}
-        self.nodes[22] = {}
+        self.nodes['6.1'].update({'y':cond['molefrac_tur'],'mdot':cond['mdot_tur'],'p':p_lo})
+        self.nodes[21].update({'y':cond['molefrac_lpp'],'p':p_me})
 
         #IMPORTANT: mass flow in distillation loop is calculated by recuperator. To prevent iteration
         # from setting distillation to 0, the heat transfer should be fixed and not depend on fluid properties.
         # Optimize the model manually for the recuperator component!
 
-        self.nodes[6]['t'] = min(90, self.nodes[2]['t'])
+        self.nodes['6.1']['t'] = min(90, self.nodes[2]['t'])
 
         self.nodes[7]['t'] = t_sat + 13 # < chosen to satisfy pinch
 
         self.nodes[21]['t'] = t_sat
 
         #beware to not raise temperature too far
-        self.nodes[22]['t'] = min(80, self.nodes[6]['t'] - cond['pinch_hex'])
+        self.nodes[22]['t'] = min(70, self.nodes['6.1']['t'] - cond['pinch_hex'])
 
-        recup = self.addComponent(comp.heatex.PinchHex,'recup').nodes(6,7,21,22).calc(cond['Nseg'],cond['pinch_hex'])
-        result['recup'] = recup.pinch
+        components['recup'].calc(cond['Nseg'], cond['pinch_hex'])
 
         #flashsep
-        self.addComponent(comp.flashsep.FlashSep,'flashsep').nodes(22,30,23).calc()
+        components['flashsep'].calc()
 
         #prheat1
-        self.nodes[15] = {'p':cond['p_hi'],'y':cond['molefrac_tur'],'mdot':cond['mdot_tur']}
-        self.nodes[15]['t'] = t_sat
+        self.nodes['15.1'].update({'p':cond['p_hi'],'y':cond['molefrac_tur'],'mdot':cond['mdot_tur']})
+        self.nodes['15.1']['t'] = t_sat
 
-        prheat1 = self.addComponent(comp.heatex.PinchHex,'prheat1').nodes(23,28,15,16).calc(cond['Nseg'],cond['pinch_hex'])
-        result['prheat1'] = prheat1.pinch
+        components['prheat1'].calc(cond['Nseg'], cond['pinch_hex'])
 
         #valve1
-        self.nodes[29] = {'p':p_lo}
+        self.nodes[29].update({'p':p_lo})
 
-        self.addComponent(comp.control.Valve,'valve1').nodes(28,29).calc()
+        components['valve1'].calc()
 
         #mixer1
-        self.addComponent(comp.control.Mixer,'mixer1').nodes(7,29,8).calc()
+        components['mixer1'].calc()
 
         #lpcon
-        self.addComponent(comp.heatex.Condenser,'lpcon').nodes(8,9).calc()
+        components['lpcon'].calc()
 
         #lppump
-        self.nodes[10] = {'p':p_me}
-        self.addComponent(comp.pump.Pump,'lppump').nodes(9,10).calc()
+        self.nodes[10].update({'p':p_me})
+        components['lppump'].calc()
 
         #split1
-        self.addComponent(comp.control.Splitter,'split1').nodes(10,11,21).calc()
+        components['split1'].calc()
 
         #mixer2
-        self.addComponent(comp.control.Mixer,'mixer2').nodes(11,30,13).calc()
+        components['mixer2'].calc()
 
         #hpcon
-        self.addComponent(comp.heatex.Condenser,'hpcon').nodes(13,14).calc()
+        components['hpcon'].calc()
 
         #hppump
         #node 15 already defined. Iteration might be needed
-        self.nodes['15.1'] = {'p':cond['p_hi']}
-        self.addComponent(comp.pump.Pump,'hppump').nodes(14,'15.1').calc()
+        self.nodes[15].update({'p':cond['p_hi']})
+        components['hppump'].calc()
 
         #prheat2
         #node 6 already defined. Iteration might be needed
@@ -99,10 +132,9 @@ class MyModel(model.DnaModel):
         #if(self.nodes[2]['t'] == self.nodes[6]['t']):
         #    self.nodes['6.1']['t'] = self.nodes[2]['t']
 
-        prheat2 = self.addComponent(comp.heatex.PinchHex,'prheat2').nodes(2,'6.1',16,18).calc(cond['Nseg'],cond['pinch_hex'])
-        result['prheat2'] = prheat2.pinch
+        components['prheat2'].calc(cond['Nseg'], cond['pinch_hex'])
 
         #receiver (TODO)
         #outlet should have same properties as node 1. Iteration might be needed
 
-        return {'node':self.nodes,'com':result}
+        return self

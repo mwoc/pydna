@@ -81,7 +81,8 @@ class PinchCalc:
         print('Running pinch point iteration, this may take a while...')
 
         #tolerance of 0.01 K is close enough
-        while abs(delta) > 0.01 and abs(convergence) > 0.0005 and  i < 40:
+        #do NOT alter convergence rate parameter. Too high value breaks design
+        while abs(delta) > 0.1 and abs(convergence) > 0.0005 and  i < 40:
             #make local copies of input
             _n1 = self.n1.copy()
             _n2 = self.n2.copy()
@@ -99,7 +100,9 @@ class PinchCalc:
                 p = scipy.poly1d(z)
 
                 dT_left = scipy.optimize.newton(p,dT_left)
-            elif len(x) >= 1:
+
+
+            if len(x) == 1:
                 #for fast iteration, be sure to swing far from 0 on both sides
                 if side == 1:
                     dT_left = dT_left - delta
@@ -130,6 +133,7 @@ class PinchCalc:
             w.append(1)
             i = i + 1
 
+            #only accept positive delta for internal pinch calculation
             if(delta >= 0):
                 #ok at least the pinch at in/outlets is ok. Now check
                 #it internally
@@ -149,7 +153,7 @@ class PinchCalc:
 
             print('Iteration: ',i,'. Residual: ',y[-1])
 
-        if abs(delta) > 0.01:
+        if abs(delta) > 0.1:
             print(delta,convergence,i)
             raise ConvergenceError('No convergence reached')
 
@@ -269,9 +273,11 @@ class PinchHex(component.Component):
 
         #find the pinch point
         pincher = PinchCalc(n1,n2,n3,n4,Nseg,dTmin)
-        self.pinch = pincher.check(n1,n2,n3,n4)
+        pinch = pincher.check(n1,n2,n3,n4)
 
-        if abs(self.pinch['dTmin'] - dTmin) > 0.1:
+        self.storeResult(pinch)
+
+        if abs(pinch['dTmin'] - dTmin) > 0.1:
             print('Pinch too small or too large')
 
         return self

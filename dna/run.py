@@ -19,7 +19,7 @@ print('Loaded environment. Simulating...')
 cond = {}
 cond['mdot_tur'] = 1
 cond['molefrac_tur'] = 0.5
-cond['molefrac_lpp'] = 0.304 # < this is a guess. Iteration will find right one
+cond['molefrac_lpp'] = 0.3 # < this is a guess. Iteration will find right one
 
 cond['t_steam'] = 450
 
@@ -32,7 +32,7 @@ cond['pinch_stor'] = 20
 
 cond['p_hi'] = 110
 
-cond['Nseg'] = 3
+cond['Nseg'] = 5
 
 #iteration parameters
 i = 0
@@ -56,7 +56,7 @@ while abs(delta) > 0.0001 and i < 10:
             #automatic guess wrong. Do manual guess instead
             x.pop()
             old = y.pop()
-            cond['molefrac_lpp'] = result['node'][9]['y'] + delta
+            cond['molefrac_lpp'] = model.nodes[9]['y'] + delta
 
             print('Using manual guess instead of ',old)
         else:
@@ -64,28 +64,30 @@ while abs(delta) > 0.0001 and i < 10:
 
     elif len(x) == 1:
         #manual guess
-        cond['molefrac_lpp'] = result['node'][9]['y'] + delta
+        cond['molefrac_lpp'] = model.nodes[9]['y'] + delta
 
     #run simulation
     print(i+1,' - NH3: ',cond['molefrac_lpp'])
 
-    model = m1_r_t.MyModel(cond)
+    #init the model (overwrite existing)
+    model = m1_r_t.MyModel(cond).init()
 
     try:
-        result = model.run()
+        #run the model
+        model.run()
     except refprop.RefpropError as e:
         print(e)
     else:
         #update looping parameters
-        delta = result['node'][9]['y'] - cond['molefrac_lpp']
+        delta = model.nodes[9]['y'] - cond['molefrac_lpp']
 
         x.append(cond['molefrac_lpp'])
         y.append(delta)
 
     i = i + 1
 
-node = result['node']
-com = result['com']
+node = model.nodes
+com = model.result
 
 print('Finished iteration')
 
