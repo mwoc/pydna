@@ -1,5 +1,5 @@
-import components.heatex
-import components.control
-import components.flashsep
-import components.pump
-import components.turbine
+from components.heatex import *
+from components.control import *
+from components.flashsep import *
+from components.pump import *
+from components.turbine import *
