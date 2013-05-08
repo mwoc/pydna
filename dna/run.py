@@ -1,4 +1,4 @@
-import numpy
+from numpy import linspace
 import matplotlib.pyplot as plt
 import csv
 
@@ -72,7 +72,7 @@ with open('../result.csv','w',newline='',encoding='utf-8') as csvfile:
 
 print('Plotting...')
 #plot recup
-x = numpy.linspace(0,1,len(com['recup']['Th']))
+x = linspace(0,1,len(com['recup']['Th']))
 miny = round_down(min(min(com['recup']['Tc']),min(com['recup']['Th']))-1,10)
 maxy = round_up(max(max(com['recup']['Tc']),max(com['recup']['Th']))+1,10)
 plt.plot(x, com['recup']['Th'], 'r->',label='Hot')
@@ -86,7 +86,7 @@ plt.savefig('../recup.png')
 plt.close()
 
 #plot prheat1
-x = numpy.linspace(0,1,len(com['prheat1r']['Th']))
+x = linspace(0,1,len(com['prheat1r']['Th']))
 miny = round_down(min(min(com['prheat1r']['Tc']),min(com['prheat1r']['Th']))-1,10)
 maxy = round_up(max(max(com['prheat1r']['Tc']),max(com['prheat1r']['Th']))+1,10)
 plt.plot(x, com['prheat1r']['Th'], 'r->',label='Hot')
@@ -100,7 +100,7 @@ plt.savefig('../prheat1r.png')
 plt.close()
 
 #plot prheat2
-x = numpy.linspace(0,1,len(com['prheat2r']['Th']))
+x = linspace(0,1,len(com['prheat2r']['Th']))
 miny = round_down(min(min(com['prheat2r']['Tc']),min(com['prheat2r']['Th']))-1,10)
 maxy = round_up(max(max(com['prheat2r']['Tc']),max(com['prheat2r']['Th']))+1,10)
 plt.plot(x, com['prheat2r']['Th'], 'r->',label='Hot')

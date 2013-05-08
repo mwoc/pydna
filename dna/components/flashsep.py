@@ -1,5 +1,6 @@
 import states
 import component
+import scipy
 
 class FlashSep(component.Component):
     def nodes(self,in1,out1,out2):
@@ -38,13 +39,48 @@ class FlashSep(component.Component):
         n2['p'] = n1['p']
         n2['t'] = n1['t']
         n2['y'] = n1['yvap']
-        states.state(n2)
 
         #liquid outlet
         n3['p'] = n1['p']
         n3['t'] = n1['t']
         n3['y'] = n1['yliq']
 
+        #yvap and yliq might be a bit off. Iterate to get right value
+        #Only changing value in n2 to prevent vapour in liquid outlet
+        i = 0
+        x = []
+        y = []
+        delta = (n1['mdot']*n1['y']) - (n2['mdot']*n2['y']) - (n3['mdot']*n3['y'])
+        alter = 0
+
+        while abs(delta) > 0.00001 and i < 10:
+
+            if len(x) > 1:
+                #curve fitting.
+                order = min(i - 1, 3)
+
+                z = scipy.polyfit(x, y, order)
+                p = scipy.poly1d(z)
+
+                alter = scipy.optimize.newton(p,alter)
+
+            else:
+                #manual guess
+                alter = alter + delta
+
+            n2y = n2['y'] + alter*(n2['mdot']/n1['mdot'])
+
+            delta = (n1['mdot']*n1['y']) - (n2['mdot']*n2y) - (n3['mdot']*n3['y'])
+
+            x.append(alter)
+            y.append(delta)
+
+            i = i + 1
+
+        #correct the mass fraction based on total mass flow:
+        n2['y'] = n2['y'] + alter*(n2['mdot']/n1['mdot'])
+
+        states.state(n2)
         states.state(n3)
 
         return self

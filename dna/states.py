@@ -59,43 +59,43 @@ def toRefprop(node):
 
     x = massToMolar(node['y'])
 
-    molWmix = float(x[0]) * float(molWNH3) + float(x[1]) * float(molWH2O)
+    molWmix = float(x[0]) * float(molWNH3) + float(x[1]) * float(molWH2O) # g/mol
 
     if 'p' in node:
         prop['p'] = node['p']*100 # hPa > kPa
 
     if 'e' in node:
-        prop['e'] = node['e']*molWmix # J/kg > J/mol
+        prop['e'] = node['e']*molWmix # kJ/kg > J/mol
 
     if 'h' in node:
-        prop['h'] = node['h']*molWmix # J/kg*K > J/mol*K
+        prop['h'] = node['h']*molWmix # kJ/kg*K > J/mol*K
 
     if 'D' in node:
         prop['D'] = node['D']/molWmix*1000 # kg/L > mol/m3
 
     if 's' in node:
-        prop['s'] = node['s']*molWmix # J/kg*K > J/mol*K
+        prop['s'] = node['s']*molWmix # kJ/kg*K > J/mol*K
 
     if 't' in node:
         prop['t'] = node['t'] + 273.15 # C > K
 
     if 'cv' in node:
-        prop['cv'] = node['cv']*molWmix
+        prop['cv'] = node['cv']*molWmix # kJ/kg*K > J/mol*K
 
     if 'cp' in node:
-        prop['cp'] = node['cp']*molWmix
+        prop['cp'] = node['cp']*molWmix # kJ/kg*K > J/mol*K
 
     if 'q' in node:
-        prop['q'] = massToMolar(node['q'])[0]
+        prop['q'] = massToMolar(node['q'])[0] # kg/kg > mol/mol
 
     if 'y' in node:
-        prop['x'] = massToMolar(node['y'])
+        prop['x'] = massToMolar(node['y']) # kg/kg > mol/mol
 
     if 'yvap' in node:
-        prop['xvap'] = massToMolar(node['yvap'])
+        prop['xvap'] = massToMolar(node['yvap']) # kg/kg > mol/mol
 
     if 'yliq' in node:
-        prop['xliq'] = massToMolar(node['yliq'])
+        prop['xliq'] = massToMolar(node['yliq']) # kg/kg > mol/mol
 
     return prop
 
@@ -111,37 +111,37 @@ def fromRefprop(prop):
         node['p'] = prop['p']/100 # kPa > hPa
 
     if 'e' in prop:
-        node['e'] = prop['e']/molWmix # J/mol > J/kg
+        node['e'] = prop['e']/molWmix # J/mol > kJ/kg
 
     if 'h' in prop:
-        node['h'] = prop['h']/molWmix # J/mol*K > J/kg*K
+        node['h'] = prop['h']/molWmix # J/mol*K > kJ/kg*K
 
     if 'D' in prop:
         node['D'] = prop['D']*molWmix/1000 # mol/L > kg/m3
 
     if 's' in prop:
-        node['s'] = prop['s']/molWmix # J/mol*K > J/kg*K
+        node['s'] = prop['s']/molWmix # J/mol*K > kJ/kg*K
 
     if 't' in prop:
         node['t'] = prop['t'] - 273.15 # K > C
 
     if 'cv' in prop:
-        node['cv'] = prop['cv']/molWmix
+        node['cv'] = prop['cv']/molWmix # J/mol*K > kJ/kg*K
 
     if 'cp' in prop:
-        node['cp'] = prop['cp']/molWmix
+        node['cp'] = prop['cp']/molWmix # J/mol*K > kJ/kg*K
 
     if 'q' in prop:
-        node['q'] = molarToMass(prop['q'])[0]
+        node['q'] = molarToMass(prop['q'])[0] #mol/mol > kg/kg
 
     if 'x' in prop:
-        node['y'] = molarToMass(prop['x'][0])[0]
+        node['y'] = molarToMass(prop['x'][0])[0] #mol/mol > kg/kg
 
     if 'xvap' in prop:
-        node['yvap'] = molarToMass(prop['xvap'][0])[0]
+        node['yvap'] = molarToMass(prop['xvap'][0])[0] #mol/mol > kg/kg
 
     if 'xliq' in prop:
-        node['yliq'] = molarToMass(prop['xliq'][0])[0]
+        node['yliq'] = molarToMass(prop['xliq'][0])[0] #mol/mol > kg/kg
 
     return node
 

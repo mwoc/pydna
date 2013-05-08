@@ -1,7 +1,6 @@
 import states
 import scipy
 import scipy.optimize
-import numpy
 import refprop
 import component
 
@@ -109,7 +108,7 @@ class PinchCalc:
                 #curve fitting, maximum order 3
                 order = min(i - 1, 3)
 
-                z = numpy.polyfit(x, y, order)
+                z = scipy.polyfit(x, y, order)
                 p = scipy.poly1d(z)
 
                 dT_left = scipy.optimize.newton(p, dT_left)

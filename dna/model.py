@@ -1,4 +1,3 @@
-import numpy
 import scipy
 import scipy.optimize
 import refprop
@@ -35,7 +34,7 @@ class IterateModel:
         self.cond = cond
         self.res_index = res_index
 
-    def run(self, oldresult = False):
+    def run(self, oldResult = False):
         '''
         This runs an iteration to make a specific value in the model match a condition
         '''
@@ -79,7 +78,7 @@ class IterateModel:
                 #curve fitting.
                 order = min(i - 1, 5)
 
-                z = numpy.polyfit(x, y, order)
+                z = scipy.polyfit(x, y, order)
                 p = scipy.poly1d(z)
 
                 self.cond[self.res_index] = scipy.optimize.newton(p,currRes['value'])

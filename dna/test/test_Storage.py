@@ -11,30 +11,27 @@ def round_up(num, divisor):
     return num + (num%divisor)
 
 #actual test:
-class HeatexTest(model.DnaModel):
+class StorageTest(model.DnaModel):
     def run(self):
         heatex = self.addComponent(comp.PinchHex, 'heatex').nodes(1, 2, 3, 4)
 
         self.nodes[1].update({
-            'media': 'other',
-            'cp': 1.5617, #kJ/kg*K
-            't': 427.83,
-            'p': 1
-        })
-        self.nodes[2].update({
-            't': 180
-        })
-
-        self.nodes[3].update({
             'media': 'kalina',
             'y': 0.6,
             'mdot': 1,
-            't': 130,
+            't': 450,
             'p': 100
         })
-        self.nodes[4].update({
-            't': self.nodes[1]['t']-20
+
+
+        self.nodes[3].update({
+            'media': 'other',
+            'cp': 1.5617, #kJ/kg*K
+            't': 180,
+            'p': 1,
+            'mdot': 2
         })
+
 
         heatex.calc(Nseg = 11, dTmin = 20)
 
@@ -55,7 +52,7 @@ class HeatexTest(model.DnaModel):
         plt.title('Hot/cold flows through HEX - pinch: ' + str(round(result['dTmin'], 2)) + ' [K]')
         plt.ylim(miny, maxy)
         plt.grid(True)
-        plt.savefig('../../heatexTest.png')
+        plt.savefig('../../storageTest.png')
         plt.close()
 
         return self
