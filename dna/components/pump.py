@@ -18,6 +18,9 @@ class Pump(component.Component):
         n2['y'] = n1['y']
         n2['mdot'] = n1['mdot']
 
+        if 'media' in n1:
+            n2['media'] = n1['media']
+
         #isentropic for now:
         n2['s'] = n1['s']
 

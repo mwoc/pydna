@@ -14,6 +14,9 @@ class Valve(component.Component):
 
         states.state(n['i'][0])
 
+        if 'media' in n['i'][0]:
+            n['o'][0]['media'] = n['i'][0]['media']
+
         n['o'][0]['h'] = n['i'][0]['h']
         n['o'][0]['y'] = n['i'][0]['y']
         n['o'][0]['mdot'] = n['i'][0]['mdot']
@@ -35,6 +38,9 @@ class Mixer(component.Component):
         n1 = n['i'][0]
         n2 = n['i'][1]
         n3 = n['o'][0]
+
+        if 'media' in n1:
+            n3['media'] = n2['media'] = n1['media']
 
         if(n1['p'] != n2['p']):
             raise InputError('mixer','pressure of inlets must be equal')
@@ -76,6 +82,9 @@ class Splitter(component.Component):
         n2 = n['o'][0]
         n3 = n['o'][1]
 
+        if 'media' in n1:
+            n3['media'] = n2['media'] = n1['media']
+
         if(not 'mdot' in n2):
             n2['mdot'] = n1['mdot'] - n3['mdot']
         elif(not 'mdot' in n3):
@@ -85,7 +94,6 @@ class Splitter(component.Component):
         else:
             if(n1['mdot'] != (n2['mdot']+n3['mdot'])):
                 raise InputError('splitter','mass flow rates do not match')
-
 
         m3 = n3['mdot']
         m2 = n2['mdot']

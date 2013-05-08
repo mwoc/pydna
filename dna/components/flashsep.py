@@ -15,6 +15,9 @@ class FlashSep(component.Component):
         n2 = n['o'][0]
         n3 = n['o'][1]
 
+        if 'media' in n1:
+            n3['media'] = n2['media'] = n1['media']
+
         #inlet
         states.state(n1)
 

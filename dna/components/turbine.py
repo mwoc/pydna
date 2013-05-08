@@ -12,12 +12,15 @@ class Turbine(component.Component):
 
         n1 = n['i'][0]
         n2 = n['o'][0]
-        n2s = n['o'][0]
+
+        if 'media' in n1:
+            n2['media'] = n1['media']
 
         #override default behaviour, use PT input
         prop1 = states.state({'p':n1['p'],'t':n1['t'],'y':n1['y']})
         n1.update(prop1)
 
+        n2s = n2.copy()
         n2s['y'] = n2['y'] = n1['y']
         n2s['mdot'] = n2['mdot'] = n1['mdot']
 

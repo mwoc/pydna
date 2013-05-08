@@ -6,6 +6,7 @@ import csv
 import refprop
 
 import m1_r_t
+from model import IterateModel
 
 def round_down(num, divisor):
     return num - (num%divisor)
@@ -34,62 +35,10 @@ cond['p_hi'] = 100
 
 cond['Nseg'] = 5
 
-#iteration parameters
-i = 0
-x = []
-y = []
-delta = 1
-
-#iterate to find right value for molefrac_lpp
-while abs(delta) > 0.0001 and i < 10:
-
-    if len(x) > 1:
-        #curve fitting.
-        order = min(i - 1, 5)
-
-        z = numpy.polyfit(x, y, order)
-        p = scipy.poly1d(z)
-
-        zero = scipy.optimize.newton(p,cond['molefrac_lpp'])
-
-        if(zero < 0):
-            #automatic guess wrong. Do manual guess instead
-            x.pop()
-            old = y.pop()
-            cond['molefrac_lpp'] = model.nodes[8]['y'] + delta
-
-            print('Using manual guess instead of ',old)
-        else:
-            cond['molefrac_lpp'] = zero
-
-    elif len(x) == 1:
-        #manual guess
-        cond['molefrac_lpp'] = model.nodes[8]['y'] + delta
-
-    #run simulation
-    print(i+1,' - NH3: ',cond['molefrac_lpp'])
-
-    #init the model (overwrite existing)
-    model = m1_r_t.MyModel(cond).init()
-
-    try:
-        #run the model
-        model.run()
-    except refprop.RefpropError as e:
-        print(e)
-    else:
-        #update looping parameters
-        delta = model.nodes[9]['y'] - cond['molefrac_lpp']
-
-        x.append(cond['molefrac_lpp'])
-        y.append(delta)
-
-    i = i + 1
+model  = IterateModel(m1_r_t.MyModel, cond, 'molefrac_lpp').run()
 
 node = model.nodes
 com = model.result
-
-print('Finished iteration')
 
 #print to csv file
 with open('../result.csv','w',newline='',encoding='utf-8') as csvfile:
@@ -101,8 +50,6 @@ with open('../result.csv','w',newline='',encoding='utf-8') as csvfile:
 
     for i in sorted(node.keys(),key=float):
         item = node[i]
-
-        print(item)
 
         #supercritical
         if('q' in item and (item['q'] > 1.000 or item['q'] < 0.000)):
@@ -138,7 +85,7 @@ plt.close()
 #plot prheat1
 x = numpy.linspace(0,1,len(com['prheat1r']['Th']))
 miny = round_down(min(min(com['prheat1r']['Tc']),min(com['prheat1r']['Th']))-1,10)
-maxy = round_up(max(max(com['prheat1']['Tc']),max(com['prheat1r']['Th']))+1,10)
+maxy = round_up(max(max(com['prheat1r']['Tc']),max(com['prheat1r']['Th']))+1,10)
 plt.plot(x, com['prheat1r']['Th'], 'r->',label='Hot')
 plt.plot(x, com['prheat1r']['Tc'], 'b-<',label='Cold')
 plt.xlabel('Location in HEX')

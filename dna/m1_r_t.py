@@ -107,10 +107,10 @@ class MyModel(model.DnaModel):
         ### Main loop ###
         self.nodes[1].update({
             'media': 'kalina',
-            'y': cond['molefrac_tur']
+            'y': cond['molefrac_tur'],
             'mdot': cond['mdot_tur'],
             'p': cond['p_hi'],
-            't': cond['t_steam'],
+            't': cond['t_steam']
         })
         self.nodes[2].update({'p': p_lo})
 
@@ -182,3 +182,16 @@ class MyModel(model.DnaModel):
         components['prheat2r'].calc(cond['Nseg'], cond['pinch_hex'])
 
         return self
+
+    def residuals(self):
+        '''
+        This returns residuals, not
+        '''
+        res = {}
+
+        res['molefrac_lpp'] = {
+            'value': self.nodes[8]['y'],
+            'range': [0, self.cond['molefrac_tur']]
+        }
+
+        return res

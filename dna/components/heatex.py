@@ -212,13 +212,19 @@ class PinchHex(component.Component):
 
         n2['p'] = n1['p']
         n2['y'] = n1['y']
-        n2['media'] = n1['media']
-        n2['cp'] = n1['cp']
+
+        if 'media' in n1:
+            n2['media'] = n1['media']
+            if n2['media'] == 'other':
+                n2['cp'] = n1['cp']
 
         n4['p'] = n3['p']
         n4['y'] = n3['y']
-        n4['media'] = n3['media']
-        n4['cp'] = n3['cp']
+
+        if 'media' in n3:
+            n4['media'] = n3['media']
+            if n3['media'] == 'other':
+                n4['cp'] = n3['cp']
 
         calc = False
 
@@ -306,6 +312,9 @@ class Condenser(component.Component):
         n = self.getNodes()
         n1 = n['i'][0]
         n2 = n['o'][0]
+
+        if 'media' in n1:
+            n2['media'] = n1['media']
 
         n2['p'] = n1['p']
         n2['y'] = n1['y']
