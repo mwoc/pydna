@@ -54,61 +54,142 @@ def massToMolar(y):
 
     return [m_nh3/mt, 1-m_nh3/mt]
 
-def refpropState(node):
-    '''
-    If the state is to be found from refprop, use this method
-    '''
+def toRefprop(node):
+    prop = {}
 
     x = massToMolar(node['y'])
 
     molWmix = float(x[0]) * float(molWNH3) + float(x[1]) * float(molWH2O)
 
+    if 'p' in node:
+        prop['p'] = node['p']*100 # hPa > kPa
+
+    if 'e' in node:
+        prop['e'] = node['e']*molWmix # J/kg > J/mol
+
+    if 'h' in node:
+        prop['h'] = node['h']*molWmix # J/kg*K > J/mol*K
+
+    if 'D' in node:
+        prop['D'] = node['D']/molWmix*1000 # kg/L > mol/m3
+
+    if 's' in node:
+        prop['s'] = node['s']*molWmix # J/kg*K > J/mol*K
+
+    if 't' in node:
+        prop['t'] = node['t'] + 273.15 # C > K
+
+    if 'cv' in node:
+        prop['cv'] = node['cv']*molWmix
+
+    if 'cp' in node:
+        prop['cp'] = node['cp']*molWmix
+
+    if 'q' in node:
+        prop['q'] = massToMolar(node['q'])[0]
+
+    if 'y' in node:
+        prop['x'] = massToMolar(node['y'])
+
+    if 'yvap' in node:
+        prop['xvap'] = massToMolar(node['yvap'])
+
+    if 'yliq' in node:
+        prop['xliq'] = massToMolar(node['yliq'])
+
+    return prop
+
+def fromRefprop(prop):
+    node = {}
+
+    x = prop['x']
+
+    molWmix = float(x[0]) * float(molWNH3) + float(x[1]) * float(molWH2O)
+
+    #convert mol to kg, K to C, kPa to hPa
+    if 'p' in prop:
+        node['p'] = prop['p']/100 # kPa > hPa
+
+    if 'e' in prop:
+        node['e'] = prop['e']/molWmix # J/mol > J/kg
+
+    if 'h' in prop:
+        node['h'] = prop['h']/molWmix # J/mol*K > J/kg*K
+
+    if 'D' in prop:
+        node['D'] = prop['D']*molWmix/1000 # mol/L > kg/m3
+
+    if 's' in prop:
+        node['s'] = prop['s']/molWmix # J/mol*K > J/kg*K
+
+    if 't' in prop:
+        node['t'] = prop['t'] - 273.15 # K > C
+
+    if 'cv' in prop:
+        node['cv'] = prop['cv']/molWmix
+
+    if 'cp' in prop:
+        node['cp'] = prop['cp']/molWmix
+
+    if 'q' in prop:
+        node['q'] = molarToMass(prop['q'])[0]
+
+    if 'x' in prop:
+        node['y'] = molarToMass(prop['x'][0])[0]
+
+    if 'xvap' in prop:
+        node['yvap'] = molarToMass(prop['xvap'][0])[0]
+
+    if 'xliq' in prop:
+        node['yliq'] = molarToMass(prop['xliq'][0])[0]
+
+    return node
+
+def refpropState(node):
+    '''
+    If the state is to be found from refprop, use this method
+    '''
+
     mode = ''
     in1 = 0
     in2 = 0
 
-    if('p' in node and 'h' in node):
+    #convert input to refprop notation:
+    _node = toRefprop(node)
+
+    #figure out which inputs to use (sorted by priority)
+    if('p' in _node and 'h' in _node):
         mode = 'ph'
-        in1 = node['p']*100
-        in2 = node['h']*molWmix
-    elif('p' in node and 'e' in node):
+        in1 = _node['p']
+        in2 = _node['h']
+    elif('p' in _node and 'e' in _node):
         mode = 'pe'
-        in1 = node['p']*100
-        in2 = node['e']*molWmix
-    elif('p' in node and 's' in node):
+        in1 = _node['p']
+        in2 = _node['e']
+    elif('p' in _node and 's' in _node):
         mode = 'ps'
-        in1 = node['p']*100
-        in2 = node['s']*molWmix
-    elif('p' in node and 'q' in node):
+        in1 = _node['p']
+        in2 = _node['s']
+    elif('p' in _node and 'q' in _node):
         mode = 'pq'
-        in1 = node['p']*100
-        in2 = massToMolar(node['q'])[0]
-    elif('t' in node and 'p' in node):
+        in1 = _node['p']
+        in2 = _node['q']
+    elif('t' in _node and 'p' in _node):
         mode = 'tp'
-        in1 = node['t'] + 273.15
-        in2 = node['p']*100
-    elif('t' in node and 'q' in node):
+        in1 = _node['t']
+        in2 = _node['p']
+    elif('t' in _node and 'q' in _node):
         mode = 'tq'
-        in1 = node['t'] + 273.15
-        in2 = massToMolar(node['q'])[0]
+        in1 = _node['t']
+        in2 = _node['q']
     else:
-        raise InputError('state','Missing inputs for: '.str(node))
+        raise InputError('state','Missing inputs for: '.str(_node))
 
-    prop = rp.flsh(mode, in1, in2, x)
+    #calculate
+    prop = rp.flsh(mode, in1, in2, _node['x'])
 
-    #convert mol to kg, K to C, kPa to hPa
-    node['p'] = prop['p']/100 # kPa > hPa
-    node['e'] = prop['e']/molWmix # J/mol > J/kg
-    node['h'] = prop['h']/molWmix # J/mol*K > J/kg*K
-    node['D'] = prop['D']*molWmix/1000 # mol/L > kg/m3
-    node['s'] = prop['s']/molWmix # J/mol*K > J/kg*K
-    node['t'] = prop['t'] - 273.15 # K > C
-    node['cv'] = prop['cv']/molWmix
-    node['cp'] = prop['cp']/molWmix
-    node['q'] = molarToMass(prop['q'])[0]
-    node['y'] = molarToMass(prop['x'][0])[0]
-    node['yvap'] = molarToMass(prop['xvap'][0])[0]
-    node['yliq'] = molarToMass(prop['xliq'][0])[0]
+    #convert back from refprop notation, then update node
+    node.update(fromRefprop(prop))
 
     return node
 

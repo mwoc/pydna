@@ -215,7 +215,7 @@ class MyModel(model.DnaModel):
         if self.cond['t_node5'] is not False:
             res['t_node5']['alter'] = self.cond['t_node5']
 
-        #this means: match n5[t] and n6.1[t]
+        #this means: match n15.1[t] and n15[t]
         res['t_node15.1'] = {
             'value': self.nodes[15]['t'],
             'alter': self.nodes['15.1']['t'],
