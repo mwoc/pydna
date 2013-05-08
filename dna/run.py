@@ -32,10 +32,13 @@ cond['Nseg'] = 5
 #simulation guesses (iterate!!):
 cond['molefrac_lpp'] = 0.29715426447
 cond['t_node5'] = False #that means no start value is given
+cond['t_node15.1'] = False
 
 model = IterateModel(m1_r_t.MyModel, cond, 'molefrac_lpp').run()
 
-model = IterateModel(m1_r_t.MyModel, cond, 't_node5').run()
+model = IterateModel(m1_r_t.MyModel, cond, 't_node15.1').run(model)
+
+model = IterateModel(m1_r_t.MyModel, cond, 't_node5').run(model)
 
 node = model.nodes
 com = model.result

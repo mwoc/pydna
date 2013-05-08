@@ -150,6 +150,9 @@ class MyModel(model.DnaModel):
         })
         self.nodes['15.1']['t'] = t_sat
 
+        if cond['t_node15.1'] is not False:
+            self.nodes['15.1'].update({'t': cond['t_node15.1']})
+
         components['prheat1r'].calc(cond['Nseg'], cond['pinch_hex'])
 
         self.nodes[28] = self.nodes[25].copy() #skipping mixerprh2
@@ -190,7 +193,11 @@ class MyModel(model.DnaModel):
         '''
         This returns residuals, not
         '''
+
         res = {}
+
+        #convenience:
+        t_sat = self.cond['t_con'] + self.cond['pinch_con']
 
         #this means: match molefrac_tur and n8[y]
         res['molefrac_lpp'] = {
@@ -208,6 +215,13 @@ class MyModel(model.DnaModel):
         if self.cond['t_node5'] is not False:
             res['t_node5']['alter'] = self.cond['t_node5']
 
-        print(res['t_node5'])
+        #this means: match n5[t] and n6.1[t]
+        res['t_node15.1'] = {
+            'value': self.nodes[15]['t'],
+            'alter': self.nodes['15.1']['t'],
+            'range': [t_sat, self.nodes[15]['t']]
+        }
+        if self.cond['t_node15.1'] is not False:
+            res['t_node15.1']['alter'] = self.cond['t_node15.1']
 
         return res

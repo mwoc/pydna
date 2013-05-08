@@ -35,7 +35,7 @@ class IterateModel:
         self.cond = cond
         self.res_index = res_index
 
-    def run(self):
+    def run(self, oldresult = False):
         '''
         This runs an iteration to make a specific value in the model match a condition
         '''
@@ -49,9 +49,13 @@ class IterateModel:
         y = []
         delta = 1
 
-        #get initial state:
-        model = self.model(self.cond).init()
-        res = model.run().residuals()
+        if oldResult is not False:
+            model = oldResult
+        else:
+            #get initial state:
+            model = self.model(self.cond).init().run()
+
+        res = model.residuals()
 
         if not self.res_index in res:
             raise Exception('Residual "',self.res_index,'" not defined in model')
