@@ -1,3 +1,8 @@
+import numpy
+import scipy
+import scipy.optimize
+import refprop
+
 class NameClash(Exception):
     pass
 
@@ -16,7 +21,7 @@ class DnaModel:
 
         return self.components[name]
 
-    def update(self,cond):
+    def update(self, cond):
         '''
         Convenience method for passing new conditions to the model
         '''
@@ -53,13 +58,16 @@ class IterateModel:
 
         currRes = res[self.res_index]
 
-        if not 'range' in currRes:
-            raise Exception('Have to specify range')
+        if not 'alter' in currRes:
+            raise Exception('Have to specify the value to alter')
 
         if not 'value' in currRes:
             raise Exception('Have to specify value to match condition')
 
-        delta = currRes['value'] - self.cond[self.res_index]
+        if not 'range' in currRes:
+            raise Exception('Have to specify range')
+
+        delta = currRes['value'] - currRes['alter']
 
         while abs(delta) > 0.0001 and i < 10:
 
@@ -70,11 +78,17 @@ class IterateModel:
                 z = numpy.polyfit(x, y, order)
                 p = scipy.poly1d(z)
 
-                cond[self.res_index] = scipy.optimize.newton(p,self.cond[self.res_index])
+                self.cond[self.res_index] = scipy.optimize.newton(p,currRes['value'])
 
             elif len(x) == 1:
                 #manual guess
-                cond[self.res_index] = currRes['value'] + delta
+                self.cond[self.res_index] = currRes['value'] + delta
+            else:
+                #if initial guess left empty on purpose, update with initial guess
+                if self.cond[self.res_index] is False:
+                    self.cond[self.res_index] = currRes['value'] + delta
+
+            #from here on self.cond[self.res_index] is guaranteed available, so use it
 
             #apply range
             orig = self.cond[self.res_index]
@@ -85,10 +99,11 @@ class IterateModel:
                 self.cond[self.res_index] = currRes['value'] + delta
 
                 #make sure this does not also fall out of range
+
                 self.cond[self.res_index] = max(currRes['range'][0], self.cond[self.res_index])
                 self.cond[self.res_index] = min(currRes['range'][1], self.cond[self.res_index])
 
-                print('Using manual guess instead of ',orig)
+                print('Using manual guess instead of: ',orig)
 
                 if len(x) > 1:
                     #extra cleanup
@@ -109,7 +124,7 @@ class IterateModel:
             else:
                 currRes = model.residuals()[self.res_index]
                 #update looping parameters
-                delta = currRes['value'] - self.cond[self.res_index]
+                delta = currRes['value'] - currRes['alter']
 
                 x.append(self.cond[self.res_index])
                 y.append(delta)

@@ -179,6 +179,9 @@ class MyModel(model.DnaModel):
         self.nodes[15].update({'p': cond['p_hi']})   #have to tell pump how far to increase pressure
         components['hppumpr'].calc()
 
+        if cond['t_node5'] is not False:
+            self.nodes[5].update({'t': cond['t_node5']})
+
         components['prheat2r'].calc(cond['Nseg'], cond['pinch_hex'])
 
         return self
@@ -189,9 +192,22 @@ class MyModel(model.DnaModel):
         '''
         res = {}
 
+        #this means: match molefrac_tur and n8[y]
         res['molefrac_lpp'] = {
             'value': self.nodes[8]['y'],
+            'alter': self.cond['molefrac_lpp'],
             'range': [0, self.cond['molefrac_tur']]
         }
+
+        #this means: match n5[t] and n6.1[t]
+        res['t_node5'] = {
+            'value': self.nodes['6.1']['t'],
+            'alter': self.nodes[5]['t'],
+            'range': [self.nodes['6.1']['t'], self.nodes[4]['t']]
+        }
+        if self.cond['t_node5'] is not False:
+            res['t_node5']['alter'] = self.cond['t_node5']
+
+        print(res['t_node5'])
 
         return res

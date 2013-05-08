@@ -1,9 +1,6 @@
 import numpy
-import scipy
-import scipy.optimize
 import matplotlib.pyplot as plt
 import csv
-import refprop
 
 import m1_r_t
 from model import IterateModel
@@ -18,24 +15,27 @@ print('Loaded environment. Simulating...')
 
 #simulation conditions
 cond = {}
-cond['mdot_tur'] = 1
-cond['molefrac_tur'] = 0.5
-cond['molefrac_lpp'] = 0.29715426447 # < this is a guess. Iteration will find right one
-
 cond['t_steam'] = 450
-
+cond['p_hi'] = 100
 cond['t_con'] = 20
-cond['dT_con'] = 15
+cond['molefrac_tur'] = 0.5
 
+cond['mdot_tur'] = 1
+
+cond['dT_con'] = 15
 cond['pinch_hex'] = 5
 cond['pinch_con'] = 4
 cond['pinch_stor'] = 20
 
-cond['p_hi'] = 100
-
 cond['Nseg'] = 5
 
-model  = IterateModel(m1_r_t.MyModel, cond, 'molefrac_lpp').run()
+#simulation guesses (iterate!!):
+cond['molefrac_lpp'] = 0.29715426447
+cond['t_node5'] = False #that means no start value is given
+
+model = IterateModel(m1_r_t.MyModel, cond, 'molefrac_lpp').run()
+
+model = IterateModel(m1_r_t.MyModel, cond, 't_node5').run()
 
 node = model.nodes
 com = model.result
