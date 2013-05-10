@@ -1,9 +1,9 @@
 import states
-import component
+from component import Component
 
-class Valve(component.Component):
+class Valve(Component):
 
-    def nodes(self,in1,out1):
+    def nodes(self, in1, out1):
         self.addInlet(in1)
         self.addOutlet(out1)
 
@@ -24,8 +24,8 @@ class Valve(component.Component):
         states.state(n['o'][0])
         return self
 
-class Mixer(component.Component):
-    def nodes(self,in1,in2,out1):
+class Mixer(Component):
+    def nodes(self, in1, in2, out1):
         self.addInlet(in1)
         self.addInlet(in2)
         self.addOutlet(out1)
@@ -67,8 +67,8 @@ class Mixer(component.Component):
         states.state(n3)
         return self
 
-class Splitter(component.Component):
-    def nodes(self,in1,out1,out2):
+class Splitter(Component):
+    def nodes(self, in1, out1, out2):
         self.addInlet(in1)
         self.addOutlet(out1)
         self.addOutlet(out2)

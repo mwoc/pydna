@@ -114,7 +114,7 @@ def fromRefprop(prop):
         node['e'] = prop['e']/molWmix # J/mol > kJ/kg
 
     if 'h' in prop:
-        node['h'] = prop['h']/molWmix # J/mol*K > kJ/kg*K
+        node['h'] = prop['h']/molWmix # J/mol > kJ/kg
 
     if 'D' in prop:
         node['D'] = prop['D']*molWmix/1000 # mol/L > kg/m3
