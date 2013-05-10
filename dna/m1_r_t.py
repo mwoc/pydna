@@ -43,6 +43,8 @@ class MyModel(model.DnaModel):
 
         self.addComponent(com.Pump, 'hppumpr').nodes(14, 15)
 
+        self.addComponent(com.Receiver, 'receiver').nodes('18.1', 19)
+
         ### Storage loop ###
 
         self.addComponent(com.Mixer, 'mixer2s').nodes(40, 32, 41)
@@ -50,6 +52,12 @@ class MyModel(model.DnaModel):
         self.addComponent(com.Condenser, 'hpcons').nodes(41, 42)
 
         self.addComponent(com.Pump, 'hppumps').nodes(42, 43)
+
+        self.addComponent(com.PinchHex, 'storage').nodes(45, 46, 61, 62)
+
+        ### Main loop merged back together
+
+        self.addComponent(com.Mixer,'mixtur').nodes(19, 46, 1)
 
         ### Distillation loop + prheat1 ###
 
@@ -104,26 +112,32 @@ class MyModel(model.DnaModel):
             'q': 0
         })['p']
 
-        ### Main loop ###
-        self.nodes[1].update({
+        #receiver conditions:
+        self.nodes['18.1'].update({
             'media': 'kalina',
             'y': cond['molefrac_tur'],
-            'mdot': cond['mdot_tur'],
             'p': cond['p_hi'],
-            't': cond['t_steam']
+            't': cond['t_node18.1']
         })
+        self.nodes[19].update({'t':cond['t_steam']})
+
+        components['receiver'].calc(cond['Qin'])
+
+        self.nodes[1] = self.nodes[19].copy()
+
+        ### Main loop ###
         self.nodes[2].update({'p': p_lo})
 
-        components['turbine'].calc(0.8)
+        components['turbine'].calc(cond['nu_is'])
 
         self.nodes[4] = self.nodes[2].copy()   #skipping prheat3 and splitprh1
 
         #Fixing state of node 6,7,21,22 as balancing point of model
         self.nodes['6.1'].update({
-            'media': 'kalina',
-            'y': cond['molefrac_tur'],
-            'mdot': cond['mdot_tur'],
-            'p': p_lo
+            'media': self.nodes[4]['media'],
+            'y': self.nodes[4]['y'],
+            'mdot': self.nodes[4]['mdot'],
+            'p': self.nodes[4]['p']
         })
         self.nodes[21].update({
             'media': 'kalina',
@@ -143,9 +157,9 @@ class MyModel(model.DnaModel):
         self.nodes[24] = self.nodes[23].copy() #skipping splitprh2
 
         self.nodes['15.1'].update({
-            'media': 'kalina',
-            'y': cond['molefrac_tur'],
-            'mdot': cond['mdot_tur'],
+            'media': self.nodes[4]['media'],
+            'y': self.nodes[4]['y'],
+            'mdot': self.nodes[4]['mdot'],
             'p': cond['p_hi']
         })
         self.nodes['15.1']['t'] = t_sat
@@ -223,5 +237,12 @@ class MyModel(model.DnaModel):
         }
         if self.cond['t_node15.1'] is not False:
             res['t_node15.1']['alter'] = self.cond['t_node15.1']
+
+        #alter 18.1.t until it matches 18.t
+        res['t_node18.1'] = {
+            'value': self.nodes[18]['t'],
+            'alter': self.cond['t_node18.1'],
+            'range': [self.nodes[16]['t'], self.nodes[1]['t']]
+        }
 
         return res
