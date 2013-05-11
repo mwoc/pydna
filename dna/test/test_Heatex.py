@@ -28,7 +28,6 @@ class HeatexTest(model.DnaModel):
         self.nodes[3].update({
             'media': 'kalina',
             'y': 0.6,
-            'mdot': 1,
             't': 130,
             'p': 100
         })
@@ -36,7 +35,7 @@ class HeatexTest(model.DnaModel):
             't': self.nodes[1]['t']-20
         })
 
-        heatex.calc(Nseg = 11, dTmin = 20)
+        heatex.calc(Nseg = 11, dTmin = 20, Q = 2245.094)
 
         return self
 
@@ -65,10 +64,12 @@ class HeatexTest(model.DnaModel):
 
         print('Hot inlet: ',n[1])
         print('Hot outlet: ',n[2])
+        print('Hot mdot:', n[1]['mdot'], '(expected ~5.8)')
         print('Energy difference: ', n[1]['mdot'] * (n[2]['h'] - n[1]['h']),' (expected -2245.094)')
 
         print('Cold inlet: ',n[3])
         print('Cold outlet: ',n[4])
+        print('Cold mdot:', n[3]['mdot'], '(expected ~1)')
         print('Energy difference: ', n[3]['mdot'] * (n[4]['h'] - n[3]['h']),' (expected  2245.094)')
 
         return self

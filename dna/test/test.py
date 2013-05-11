@@ -10,8 +10,8 @@ sys.path.append(_filename)
 #TurbineTest({}).run().analyse()
 
 #heatex
-#from test_Heatex import HeatexTest
-#hx = HeatexTest({}).run().analyse().plot()
+from test_Heatex import HeatexTest
+hx = HeatexTest({}).run().analyse().plot()
 
 #storage
 #from test_Storage import StorageTest

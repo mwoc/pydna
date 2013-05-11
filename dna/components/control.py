@@ -58,11 +58,16 @@ class Mixer(Component):
             if(n3['mdot'] != (n1['mdot']+n2['mdot'])):
                 raise InputError('mixer','mass flow rates do not match')
 
-        #mass fraction balance
-        n3['y'] = (n1['mdot']*n1['y'] + n2['mdot']*n2['y'] )/n3['mdot']
+        if n3['mdot'] is 0:
+            #though an mdot of 0 is not useful, don't let that ruin the simulation
+            n3['y'] = (n1['y'] +n2['y']) / 2
+            n3['h'] = (n1['h'] +n2['h']) / 2
+        else:
+            #mass fraction balance
+            n3['y'] = (n1['mdot']*n1['y'] + n2['mdot']*n2['y'] )/n3['mdot']
 
-        #internal energy balance
-        n3['h'] = (n1['mdot']*n1['h'] + n2['mdot']*n2['h'] )/n3['mdot']
+            #enthalpy balance
+            n3['h'] = (n1['mdot']*n1['h'] + n2['mdot']*n2['h'] )/n3['mdot']
 
         states.state(n3)
         return self
@@ -95,13 +100,20 @@ class Splitter(Component):
             if(n1['mdot'] != (n2['mdot']+n3['mdot'])):
                 raise InputError('splitter','mass flow rates do not match')
 
-        m3 = n3['mdot']
-        m2 = n2['mdot']
+        n2.update({
+            'p': n1['p'],
+            'h': n1['h'],
+            'y': n1['y'],
+            'cp': n1['cp']
+        })
+        states.state(n2)
 
-        n2.update(n1)
-        n3.update(n1)
-
-        n2['mdot'] = m2
-        n3['mdot'] = m3
+        n3.update({
+            'p': n1['p'],
+            'h': n1['h'],
+            'y': n1['y'],
+            'cp': n1['cp']
+        })
+        states.state(n3)
 
         return self

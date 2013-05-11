@@ -101,6 +101,11 @@ class PinchCalc:
             _n3 = self.n3.copy()
             _n4 = self.n4.copy()
 
+            if(_n1['mdot'] <= 0 or _n3['mdot'] <= 0):
+                #no iteration possible, early return
+                result['pinch'] = self.check(_n1, _n2, _n3, _n4)
+                return result['pinch']
+
             dT_left = dTmin
 
             if len(x) > 1:
@@ -193,7 +198,7 @@ class PinchHex(component.Component):
 
         return self
 
-    def calc(self, Nseg = 11, dTmin = 5):
+    def calc(self, Nseg = 11, dTmin = 5, Q = False):
         n = self.getNodes()
 
         n1 = n['i'][0]
@@ -241,26 +246,34 @@ class PinchHex(component.Component):
             #find pinch by iteration, for given mass flow rates and inlet temperatures
             calc = True
 
-            #first try one side of the HEX
-            try:
-                pinch = pincher.iterate(side=1)
-            except refprop.RefpropError as e:
-                print('First side failed, trying second. Reason:')
+            if(n1['mdot'] <= 0 or n3['mdot'] <= 0):
+                #no heat exchange at all
+                n2['t'] = n1['t']
+                states.state(n2)
 
-                #if that failed, try from the other
+                n4['t'] = n3['t']
+                states.state(n4)
+            else:
+                #first try one side of the HEX
                 try:
-                    pinch = pincher.iterate(side=2)
+                    pinch = pincher.iterate(side=1)
                 except refprop.RefpropError as e:
-                    print('Second side iteration also failed.')
-                    raise Exception(e)
-            except ConvergenceError as e:
-                print('Convergence failed, trying other side', e)
+                    print('First side failed, trying second. Reason:')
 
-                try:
-                    pinch = pincher.iterate(side=2)
-                except refprop.RefpropError as e:
-                    print('Second side iteration also failed.')
-                    raise Exception(e)
+                    #if that failed, try from the other
+                    try:
+                        pinch = pincher.iterate(side=2)
+                    except refprop.RefpropError as e:
+                        print('Second side iteration also failed.')
+                        raise Exception(e)
+                except ConvergenceError as e:
+                    print('Convergence failed, trying other side', e)
+
+                    try:
+                        pinch = pincher.iterate(side=2)
+                    except refprop.RefpropError as e:
+                        print('Second side iteration also failed.')
+                        raise Exception(e)
 
         elif(not 't' in n4):
             #calculate T4 for given mass flow rates and other temperatures
@@ -275,13 +288,20 @@ class PinchHex(component.Component):
             states.state(n2)
 
         if(not 'mdot' in n3):
-            #calculate m3 for given m1 and temperatures
+            #calculate m3 for given m1 or Q, and given temperatures
             calc = True
+            if not 'mdot' in n1:
+                n1['mdot'] = Q / (n1['h'] - n2['h'])
+
             n3['mdot'] = ((n1['h'] - n2['h']) * n1['mdot']) / (n4['h'] - n3['h'])
 
         elif(not 'mdot' in n1):
-            #calculate m1 for given m3 and temperatures
+            #calculate m1 for given m3 or Q, and given temperatures
             calc = True
+
+            if not 'mdot' in n3:
+                n3['mdot'] = Q / (n4['h'] - n3['h'])
+
             n1['mdot'] = ((n4['h'] - n3['h']) * n3['mdot']) / (n1['h'] - n2['h'])
 
         if(calc == False):
