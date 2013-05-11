@@ -53,7 +53,7 @@ class MyModel(model.DnaModel):
 
         self.addComponent(com.Pump, 'hppumps').nodes(42, 43)
 
-        self.addComponent(com.PinchHex, 'storage').nodes(45, 46, 61, 62)
+        self.addComponent(com.PinchHex, 'storage').nodes(61, 62, '45.1', 46)
 
         ### Main loop merged back together
 
@@ -119,25 +119,46 @@ class MyModel(model.DnaModel):
             'p': cond['p_hi'],
             't': cond['t_node18.1']
         })
-        self.nodes[19].update({'t':cond['t_steam']})
+        self.nodes[19]['t'] = cond['t_steam']
 
-        components['receiver'].calc(cond['Qin'])
+        components['receiver'].calc(cond['Q_rcvr'])
 
-        self.nodes[1] = self.nodes[19].copy()
+        #storage conditions:
+        self.nodes[61].update({
+            'media': 'other',
+            'cp': 1.5617, #kJ/kg*K
+            't': 427.83,
+            'p': 1
+        })
+        self.nodes[62]['t'] = 180
+
+        self.nodes['45.1'].update({
+            'media': 'kalina',
+            'y': cond['molefrac_tur'],
+            'p': cond['p_hi'],
+            't': cond['t_node45.1']
+        })
+        self.nodes[46]['t'] = cond['t_steam'] - 20
+
+        components['storage'].calc(cond['Nseg'], cond['pinch_hex'], Q = cond['Q_stor'])
+
+        components['mixtur'].calc()
 
         ### Main loop ###
-        self.nodes[2].update({'p': p_lo})
+        self.nodes[2]['p'] = p_lo
 
         components['turbine'].calc(cond['nu_is'])
 
-        self.nodes[4] = self.nodes[2].copy()   #skipping prheat3 and splitprh1
+        self.nodes[51]['mdot'] = 0 #not passing any flow through prheat2s yet
+
+        components['splitprh2'].calc()
 
         #Fixing state of node 6,7,21,22 as balancing point of model
         self.nodes['6.1'].update({
-            'media': self.nodes[4]['media'],
-            'y': self.nodes[4]['y'],
-            'mdot': self.nodes[4]['mdot'],
-            'p': self.nodes[4]['p']
+            'media': self.nodes[2]['media'],
+            'y': self.nodes[2]['y'],
+            'mdot': self.nodes[2]['mdot'],
+            'p': self.nodes[2]['p']
         })
         self.nodes[21].update({
             'media': 'kalina',
@@ -154,52 +175,91 @@ class MyModel(model.DnaModel):
 
         components['flashsep'].calc()
 
-        self.nodes[24] = self.nodes[23].copy() #skipping splitprh2
+        self.nodes[26]['mdot'] = 0
 
+        components['splitprh1'].calc()
+
+
+        #prheat1r
         self.nodes['15.1'].update({
-            'media': self.nodes[4]['media'],
-            'y': self.nodes[4]['y'],
-            'mdot': self.nodes[4]['mdot'],
-            'p': cond['p_hi']
+            'media': self.nodes[19]['media'],
+            'y': self.nodes[19]['y'],
+            'mdot': self.nodes[19]['mdot'],
+            'p': self.nodes[19]['p']
         })
         self.nodes['15.1']['t'] = t_sat
 
         if cond['t_node15.1'] is not False:
-            self.nodes['15.1'].update({'t': cond['t_node15.1']})
+            self.nodes['15.1']['t'] = cond['t_node15.1']
 
         components['prheat1r'].calc(cond['Nseg'], cond['pinch_hex'])
 
-        self.nodes[28] = self.nodes[25].copy() #skipping mixerprh2
+        #prheat1s
+        self.nodes['43.1'].update({
+            'media': self.nodes[46]['media'],
+            'y': self.nodes[46]['y'],
+            'mdot': self.nodes[46]['mdot'],
+            'p': self.nodes[46]['p']
+        })
+        self.nodes['43.1']['t'] = t_sat
 
-        self.nodes[29].update({'p': p_lo})   #have to tell valve how far to drop pressure
+        if cond['t_node43.1'] is not False:
+            self.nodes['43.1']['t'] = cond['t_node43.1']
+
+        components['prheat1s'].calc(cond['Nseg'], cond['pinch_hex'])
+
+        components['mixerprh1'].calc()
+
+        self.nodes[29]['p'] = p_lo   #have to tell valve how far to drop pressure
         components['valve1'].calc()
-
-        self.nodes[31] = self.nodes[30].copy() #skipping split2r
 
         components['mixer1'].calc()
 
         components['lpcon'].calc()
 
-        self.nodes[10].update({'p': p_me})   #have to tell pump how far to increase pressure
+        self.nodes[10]['p'] = p_me   #have to tell pump how far to increase pressure
         components['lppump'].calc()
 
         components['split1'].calc()
 
-        self.nodes[12] = self.nodes[11].copy() #skipping split2l
+        ### Mass fraction magic ###
 
-        ### Receiver loop ###
+        self.nodes[32]['mdot'] = 0 #FIXME
+
+        components['split2r'].calc()
+
+        self.nodes[40]['mdot'] = 0 #FIXME
+
+        components['split2l'].calc()
 
         components['mixer2r'].calc()
 
+        components['mixer2s'].calc()
+
+        ### Receiver loop ###
+
         components['hpconr'].calc()
 
-        self.nodes[15].update({'p': cond['p_hi']})   #have to tell pump how far to increase pressure
+        self.nodes[15]['p'] = self.nodes['15.1']['p']   #have to tell pump how far to increase pressure
         components['hppumpr'].calc()
 
-        if cond['t_node5'] is not False:
-            self.nodes[5].update({'t': cond['t_node5']})
-
         components['prheat2r'].calc(cond['Nseg'], cond['pinch_hex'])
+
+        ### Storage loop ###
+
+        components['hpcons'].calc()
+
+        self.nodes[43]['p'] = self.nodes['43.1']['p']   #have to tell pump how far to increase pressure
+        components['hppumps'].calc()
+
+        components['prheat2s'].calc(cond['Nseg'], cond['pinch_hex'])
+
+        #merge streams 5+52 > 6
+
+        if cond['t_node6'] is not False:
+            self.nodes[6]['t'] = cond['t_node6']
+
+        components['mixprh2'].calc()
 
         return self
 
@@ -220,14 +280,14 @@ class MyModel(model.DnaModel):
             'range': [0, self.cond['molefrac_tur']]
         }
 
-        #this means: match n5[t] and n6.1[t]
-        res['t_node5'] = {
+        #this means: match n6[t] and n6.1[t]
+        res['t_node6'] = {
             'value': self.nodes['6.1']['t'],
-            'alter': self.nodes[5]['t'],
+            'alter': self.nodes[6]['t'],
             'range': [self.nodes['6.1']['t'], self.nodes[4]['t']]
         }
-        if self.cond['t_node5'] is not False:
-            res['t_node5']['alter'] = self.cond['t_node5']
+        if self.cond['t_node6'] is not False:
+            res['t_node6']['alter'] = self.cond['t_node6']
 
         #this means: match n15.1[t] and n15[t]
         res['t_node15.1'] = {
@@ -238,11 +298,27 @@ class MyModel(model.DnaModel):
         if self.cond['t_node15.1'] is not False:
             res['t_node15.1']['alter'] = self.cond['t_node15.1']
 
+        #this means: match n43.1[t] and n43[t]
+        res['t_node15.1'] = {
+            'value': self.nodes[43]['t'],
+            'alter': self.nodes['43.1']['t'],
+            'range': [t_sat, self.nodes[43]['t']]
+        }
+        if self.cond['t_node43.1'] is not False:
+            res['t_node43.1']['alter'] = self.cond['t_node43.1']
+
         #alter 18.1.t until it matches 18.t
         res['t_node18.1'] = {
             'value': self.nodes[18]['t'],
             'alter': self.cond['t_node18.1'],
             'range': [self.nodes[16]['t'], self.nodes[1]['t']]
+        }
+
+        #alter 45.1.t until it matches 45.t
+        res['t_node18.1'] = {
+            'value': self.nodes[45]['t'],
+            'alter': self.cond['t_node45.1'],
+            'range': [self.nodes[44]['t'], self.nodes[1]['t']]
         }
 
         return res
