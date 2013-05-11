@@ -58,7 +58,7 @@ class Mixer(Component):
             if(n3['mdot'] != (n1['mdot']+n2['mdot'])):
                 raise InputError('mixer','mass flow rates do not match')
 
-        if n3['mdot'] is 0:
+        if n3['mdot'] == 0:
             #though an mdot of 0 is not useful, don't let that ruin the simulation
             n3['y'] = (n1['y'] +n2['y']) / 2
             n3['h'] = (n1['h'] +n2['h']) / 2
