@@ -41,18 +41,18 @@ cond['t_node45.1'] = 80
 
 #iteration should be done from the most defined point to the least defined point
 #in this case, the state at n1 is completely known. First value to find by iteration is:
-model = IterateModel(m1_r_t.MyModel, cond, 'molefrac_lpp').run()
+model = IterateModel(m1_r_t.MyModel, cond).run()
 
 #then 15, 5, 18 (5 in between due to prheat2r connecting it with point 16-17)
-model = IterateModel(m1_r_t.MyModel, cond, 't_node15.1').run(model)
+#model = IterateModel(m1_r_t.MyModel, cond, 1).run(model)
 
-model = IterateModel(m1_r_t.MyModel, cond, 't_node43.1').run(model)
+#model = IterateModel(m1_r_t.MyModel, cond, 2).run(model)
 
-model = IterateModel(m1_r_t.MyModel, cond, 't_node6').run(model)
+#model = IterateModel(m1_r_t.MyModel, cond, 3).run(model)
 
-model = IterateModel(m1_r_t.MyModel, cond, 't_node18.1').run(model)
+#model = IterateModel(m1_r_t.MyModel, cond, 4).run(model)
 
-model = IterateModel(m1_r_t.MyModel, cond, 't_node45.1').run(model)
+#model = IterateModel(m1_r_t.MyModel, cond, 5).run(model)
 #any other order and you would need to run a specific iteration again later on
 
 node = model.nodes

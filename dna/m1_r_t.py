@@ -270,57 +270,72 @@ class MyModel(model.DnaModel):
         This returns residuals, not
         '''
 
-        res = {}
+        res = []
 
         #convenience:
         t_sat = self.cond['t_con'] + self.cond['pinch_con']
 
         #this means: match molefrac_tur and n8[y]
-        res['molefrac_lpp'] = {
+        res.append({
+            'cond': 'molefrac_lpp',
             'value': self.nodes[8]['y'],
             'alter': self.cond['molefrac_lpp'],
             'range': [0, self.cond['molefrac_tur']]
-        }
+        })
 
         #this means: match n6[t] and n6.1[t]
-        res['t_node6'] = {
+        node6 = {
+            'cond': 't_node6',
             'value': self.nodes['6.1']['t'],
             'alter': self.nodes[6]['t'],
             'range': [self.nodes['6.1']['t']-5, self.nodes[4]['t']+5]
         }
+
         if self.cond['t_node6'] is not False:
-            res['t_node6']['alter'] = self.cond['t_node6']
+            node6['alter'] = self.cond['t_node6']
+
+        res.append(node6)
+
+        #is this needed? check:
 
         #this means: match n15.1[t] and n15[t]
-        res['t_node15.1'] = {
+        res.append({
+            'cond': 't_node15.1',
             'value': self.nodes[15]['t'],
             'alter': self.nodes['15.1']['t'],
             'range': [t_sat-5, self.nodes[15]['t']+5]
-        }
-        if self.cond['t_node15.1'] is not False:
-            res['t_node15.1']['alter'] = self.cond['t_node15.1']
+        })
+
+        #is this needed? check:
+        #if self.cond['t_node15.1'] is not False:
+        #    res['t_node15.1']['alter'] = self.cond['t_node15.1']
 
         #this means: match n43.1[t] and n43[t]
-        res['t_node43.1'] = {
+        res.append({
+            'cond': 't_node43.1',
             'value': self.nodes[43]['t'],
             'alter': self.nodes['43.1']['t'],
             'range': [t_sat-5, self.nodes[43]['t']+5]
-        }
-        if self.cond['t_node43.1'] is not False:
-            res['t_node43.1']['alter'] = self.cond['t_node43.1']
+        })
+
+        #is this needed? check:
+        #if self.cond['t_node43.1'] is not False:
+        #    res['t_node43.1']['alter'] = self.cond['t_node43.1']
 
         #alter 18.1.t until it matches 18.t
-        res['t_node18.1'] = {
+        res.append({
+            'cond': 't_node18.1',
             'value': self.nodes[18]['t'],
             'alter': self.cond['t_node18.1'],
             'range': [self.nodes[16]['t']-5, self.nodes[1]['t']+5]
-        }
+        })
 
         #alter 45.1.t until it matches 45.t
-        res['t_node45.1'] = {
+        res.append({
+            'cond': 't_node45.1',
             'value': self.nodes[45]['t'],
             'alter': self.cond['t_node45.1'],
             'range': [self.nodes[44]['t']-5, self.nodes[1]['t']+5]
-        }
+        })
 
         return res

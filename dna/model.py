@@ -28,11 +28,17 @@ class DnaModel:
 
         return self
 
+class IterateParamHelper:
+    def __init__(self):
+        self.i = 0
+        self.x = []
+        self.y = []
+        self.delta = 1
+
 class IterateModel:
-    def __init__(self, model, cond, res_index):
+    def __init__(self, model, cond):
         self.model = model
         self.cond = cond
-        self.res_index = res_index
 
     def run(self, oldResult = False):
         '''
@@ -41,98 +47,123 @@ class IterateModel:
 
         #FIXME: Running an iteration with False as initial guess is troublesome
 
-        print('Starting iteration for ', self.res_index)
+        print('Starting iteration for full model')
 
-        print(0, ' - ', self.res_index, ': ', self.cond[self.res_index])
-
+        #global iterate vars
         i = 0
-        x = []
-        y = []
         delta = 1
 
         if oldResult is not False:
             model = oldResult
         else:
             #get initial state:
+            print('Getting initial state')
             model = self.model(self.cond).init().run()
 
+        print('Analyzing initial residuals')
         res = model.residuals()
 
-        if not self.res_index in res:
-            raise Exception('Residual "',self.res_index,'" not defined in model')
+        #prepare iterator helpers
+        iterate = []
+        tol = 0.0001
 
-        currRes = res[self.res_index]
+        for res_index, currRes in enumerate(res):
 
-        if not 'alter' in currRes:
-            raise Exception('Have to specify the value to alter')
+            if not 'cond' in currRes:
+                raise Exception('Have to specify condition name')
 
-        if not 'value' in currRes:
-            raise Exception('Have to specify value to match condition')
+            if not 'alter' in currRes:
+                raise Exception('Have to specify the value to alter')
 
-        if not 'range' in currRes:
-            raise Exception('Have to specify range')
+            if not 'value' in currRes:
+                raise Exception('Have to specify value to match condition')
 
-        delta = currRes['value'] - currRes['alter']
+            if not 'range' in currRes:
+                raise Exception('Have to specify range')
 
-        while abs(delta) > 0.0001 and i < 10:
+            iterate.append(IterateParamHelper())
 
-            if len(x) > 1:
-                #curve fitting.
-                order = max(1, min(i - 2, 5))
+        while abs(delta) > tol*len(res) and i < 10:
 
-                try:
-                    z = numpy.polyfit(x, y, order)
-                except numpy.RankWarning as e:
-                    #note: this is not getting called at all
-                    z = numpy.polyfit(x, y, order - 1, full=True)
-                    p = numpy.poly1d(z[0])
-                else:
-                    p = numpy.poly1d(z)
+            print('Updating conditions based on residuals...')
+            #loop over all residuals
+            for res_index, currRes in enumerate(res):
 
-                try:
-                    self.cond[self.res_index] = scipy.optimize.newton(p,currRes['value'])
-                except RuntimeError:
-                    print('x = ', x)
-                    print('y = ', y)
-                    print('o = ', order)
-                    print('z = ', z)
+                currIter = iterate[res_index]
 
-            elif len(x) == 1:
-                #manual guess
-                self.cond[self.res_index] = currRes['value'] + delta
-            else:
-                #if initial guess left empty on purpose, update with initial guess
-                if self.cond[self.res_index] is False:
-                    self.cond[self.res_index] = currRes['value'] + delta
+                print(i + 1, ' - ', currRes['cond'], ': ', self.cond[currRes['cond']])
 
-            #from here on self.cond[self.res_index] is guaranteed available, so use it
+                currIter.delta = currRes['value'] - currRes['alter']
 
-            #apply range
-            orig = self.cond[self.res_index]
-            self.cond[self.res_index] = max(currRes['range'][0], self.cond[self.res_index])
-            self.cond[self.res_index] = min(currRes['range'][1], self.cond[self.res_index])
+                print('x = ', currIter.x)
+                print('y = ', currIter.y)
+                print('delta = ', currIter.delta)
+                #print('o = ', order)
+                #print('z = ', z)
 
-            if self.cond[self.res_index] != orig:
-                self.cond[self.res_index] = currRes['value'] + delta
+                if abs(currIter.delta) > tol:
 
-                #make sure this does not also fall out of range
+                    if len(currIter.x) > 1:
+                        #curve fitting.
+                        order = max(1, min( len(currIter.x) - 2, 5))
 
-                self.cond[self.res_index] = max(currRes['range'][0], self.cond[self.res_index])
-                self.cond[self.res_index] = min(currRes['range'][1], self.cond[self.res_index])
+                        try:
+                            z = numpy.polyfit(currIter.x, currIter.y, order)
+                        except numpy.RankWarning as e:
+                            #note: this is not getting called at all
+                            z = numpy.polyfit(currIter.x, currIter.y, order - 1, full=True)
+                            p = numpy.poly1d(z[0])
+                        else:
+                            p = numpy.poly1d(z)
 
-                print('Using manual guess instead of: ',orig)
+                        try:
+                            self.cond[currRes['cond']] = scipy.optimize.newton(p,currRes['alter'])
+                        except RuntimeError:
+                            print('x = ', currIter.x)
+                            print('y = ', currIter.y)
+                            print('o = ', order)
+                            print('z = ', z)
 
-                #if len(x) > 1:
-                    #extra cleanup
-                    #x.pop()
-                    #x.pop()
-                    #x.push(self.cond[self.res_index])
+                    elif len(currIter.x) == 1:
+                        #manual guess
+                        self.cond[currRes['cond']] = currRes['alter'] + currIter.delta
+                    else:
+                        #if initial guess left empty on purpose, update with initial guess
+                        if self.cond[currRes['cond']] is False:
+                            self.cond[currRes['cond']] = currRes['alter'] + currIter.delta
 
-            #run simulation
-            print(i + 1, ' - ', self.res_index, ': ', self.cond[self.res_index])
+                    #from here on self.cond[currRes['cond']] is guaranteed available, so use it
 
+                    #apply range
+                    orig = self.cond[currRes['cond']]
+                    self.cond[currRes['cond']] = max(currRes['range'][0], self.cond[currRes['cond']])
+                    self.cond[currRes['cond']] = min(currRes['range'][1], self.cond[currRes['cond']])
+
+                    if self.cond[currRes['cond']] != orig:
+                        self.cond[currRes['cond']] = currRes['alter'] + currIter.delta
+
+                        #make sure this does not also fall out of range
+
+                        self.cond[currRes['cond']] = max(currRes['range'][0], self.cond[currRes['cond']])
+                        self.cond[currRes['cond']] = min(currRes['range'][1], self.cond[currRes['cond']])
+
+                        print('Using manual guess instead of: ',orig)
+
+                        #if len(x) > 1:
+                            #extra cleanup
+                            #x.pop()
+                            #x.pop()
+                            #x.push(self.cond[currRes['cond']])
+
+                    print(i + 1, ' - ', currRes['cond'], ': ', self.cond[currRes['cond']])
+
+            i = i + 1
+
+            #end for
             #init the model (overwrite existing)
             model = self.model(self.cond).init()
+
+            print('Done. Re-running model...')
 
             try:
                 #run the model
@@ -140,14 +171,23 @@ class IterateModel:
             except refprop.RefpropError as e:
                 print(e)
             else:
-                currRes = model.residuals()[self.res_index]
-                #update looping parameters
-                delta = currRes['value'] - currRes['alter']
+                print('Ran model. Updating guesses')
 
-                x.append(self.cond[self.res_index])
-                y.append(delta)
+                res = model.residuals()
 
-            i = i + 1
+                newdelta = 0
+
+                for res_index, currRes in enumerate(res):
+                    currIter = iterate[res_index]
+                    #update looping parameters
+                    currIter.delta = currRes['value'] - currRes['alter']
+
+                    currIter.x.append(self.cond[currRes['cond']])
+                    currIter.y.append(currIter.delta)
+
+                    newdelta = newdelta + abs(currIter.delta)
+
+                delta = newdelta
 
         print('Finished iteration')
 
