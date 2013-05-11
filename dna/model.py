@@ -80,10 +80,6 @@ class IterateModel:
                 #curve fitting.
                 order = max(1, min(i - 2, 5))
 
-                print('x = ', x)
-                print('y = ', y)
-                print('o = ', order)
-
                 try:
                     z = numpy.polyfit(x, y, order)
                 except numpy.RankWarning as e:
@@ -126,10 +122,11 @@ class IterateModel:
 
                 print('Using manual guess instead of: ',orig)
 
-                if len(x) > 1:
+                #if len(x) > 1:
                     #extra cleanup
-                    x.pop()
-                    y.pop()
+                    #x.pop()
+                    #x.pop()
+                    #x.push(self.cond[self.res_index])
 
             #run simulation
             print(i + 1, ' - ', self.res_index, ': ', self.cond[self.res_index])

@@ -301,7 +301,7 @@ class MyModel(model.DnaModel):
             res['t_node15.1']['alter'] = self.cond['t_node15.1']
 
         #this means: match n43.1[t] and n43[t]
-        res['t_node15.1'] = {
+        res['t_node43.1'] = {
             'value': self.nodes[43]['t'],
             'alter': self.nodes['43.1']['t'],
             'range': [t_sat-5, self.nodes[43]['t']+5]
@@ -317,7 +317,7 @@ class MyModel(model.DnaModel):
         }
 
         #alter 45.1.t until it matches 45.t
-        res['t_node18.1'] = {
+        res['t_node45.1'] = {
             'value': self.nodes[45]['t'],
             'alter': self.cond['t_node45.1'],
             'range': [self.nodes[44]['t']-5, self.nodes[1]['t']+5]
