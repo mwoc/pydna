@@ -39,21 +39,8 @@ cond['t_node43.1'] = False
 cond['t_node18.1'] = 80
 cond['t_node45.1'] = 80
 
-#iteration should be done from the most defined point to the least defined point
-#in this case, the state at n1 is completely known. First value to find by iteration is:
+#pass initial conditions to model and run/iterate it
 model = IterateModel(m1_r_t.MyModel, cond).run()
-
-#then 15, 5, 18 (5 in between due to prheat2r connecting it with point 16-17)
-#model = IterateModel(m1_r_t.MyModel, cond, 1).run(model)
-
-#model = IterateModel(m1_r_t.MyModel, cond, 2).run(model)
-
-#model = IterateModel(m1_r_t.MyModel, cond, 3).run(model)
-
-#model = IterateModel(m1_r_t.MyModel, cond, 4).run(model)
-
-#model = IterateModel(m1_r_t.MyModel, cond, 5).run(model)
-#any other order and you would need to run a specific iteration again later on
 
 node = model.nodes
 com = model.result
@@ -61,7 +48,7 @@ com = model.result
 #print to csv file
 with open('../result.csv','w',newline='',encoding='utf-8') as csvfile:
     print('Exporting results to csv file...')
-    fieldnames = ['Node','from','to','y','mdot','t','p','h','q','s']
+    fieldnames = ['Node','from','to','media','y','mdot','t','p','h','q','s']
     writer = csv.DictWriter(csvfile,fieldnames=fieldnames,restval='-',delimiter=',',quotechar='"',quoting=csv.QUOTE_MINIMAL)
 
     writer.writerow(dict((fn,fn) for fn in fieldnames))
@@ -73,10 +60,13 @@ with open('../result.csv','w',newline='',encoding='utf-8') as csvfile:
         if('q' in item and (item['q'] > 1.000 or item['q'] < 0.000)):
             item['q'] = '-'
 
-        if(not 'from' in item):
+        if not 'media' in item:
+            item['media'] = '-'
+
+        if not 'from' in item:
             item['from'] = '-'
 
-        if(not 'to' in item):
+        if not 'to' in item:
             item['to'] = '-'
 
         item['Node'] = i

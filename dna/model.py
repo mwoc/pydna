@@ -51,7 +51,7 @@ class IterateModel:
 
         #global iterate vars
         i = 0
-        delta = 1
+        maxDelta = 1
 
         if oldResult is not False:
             model = oldResult
@@ -83,25 +83,25 @@ class IterateModel:
 
             iterate.append(IterateParamHelper())
 
-        while abs(delta) > tol*len(res) and i < 10:
+        while abs(maxDelta) > tol and i < 10:
 
             print('Updating conditions based on residuals...')
             #loop over all residuals
             for res_index, currRes in enumerate(res):
 
                 currIter = iterate[res_index]
-
-                print(i + 1, ' - ', currRes['cond'], ': ', self.cond[currRes['cond']])
-
                 currIter.delta = currRes['value'] - currRes['alter']
 
-                print('x = ', currIter.x)
-                print('y = ', currIter.y)
-                print('delta = ', currIter.delta)
-                #print('o = ', order)
-                #print('z = ', z)
-
                 if abs(currIter.delta) > tol:
+
+                    print(i + 1, ' - ', currRes['cond'], ': ', self.cond[currRes['cond']])
+
+                    print('x = ', currIter.x)
+                    print('y = ', currIter.y)
+                    print('delta = ', currIter.delta)
+                    #print('o = ', order)
+                    #print('z = ', z)
+
 
                     if len(currIter.x) > 1:
                         #curve fitting.
@@ -175,19 +175,27 @@ class IterateModel:
 
                 res = model.residuals()
 
-                newdelta = 0
+                maxDelta = 0
 
                 for res_index, currRes in enumerate(res):
                     currIter = iterate[res_index]
                     #update looping parameters
+
+                    oldDelta = currIter.delta
                     currIter.delta = currRes['value'] - currRes['alter']
 
-                    currIter.x.append(self.cond[currRes['cond']])
-                    currIter.y.append(currIter.delta)
+                    if abs(currIter.delta) > abs(maxDelta):
+                        maxDelta = currIter.delta #maxDelta is for controlling the while loop
 
-                    newdelta = newdelta + abs(currIter.delta)
+                    if abs(currIter.delta) < tol:
+                        #clear iteratorHelper when reaching desired tolerance
+                        currIter.x = []
+                        currIter.y = []
 
-                delta = newdelta
+                    if currIter.delta != 0:
+                        #be sure to not store exact matches, they break optimize()
+                        currIter.x.append(self.cond[currRes['cond']])
+                        currIter.y.append(currIter.delta)
 
         print('Finished iteration')
 

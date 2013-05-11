@@ -291,6 +291,9 @@ class MyModel(model.DnaModel):
             'range': [self.nodes['6.1']['t']-5, self.nodes[4]['t']+5]
         }
 
+        #FIXME: This residual is not working accurately, it could be as much
+        # as 0.3 K off while tolerance is at 0.0001
+
         if self.cond['t_node6'] is not False:
             node6['alter'] = self.cond['t_node6']
 
