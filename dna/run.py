@@ -21,8 +21,8 @@ cond['t_con'] = 20
 cond['molefrac_tur'] = 0.5
 
 cond['nu_is'] = 0.8
-cond['Q_rcvr'] = 25000
-cond['Q_stor'] = 0
+cond['Q_rcvr'] = 20000
+cond['Q_stor'] = 5000
 
 cond['dT_con'] = 15
 cond['pinch_hex'] = 5
@@ -41,10 +41,12 @@ cond['t_node45.1'] = 80
 
 #iteration should be done from the most defined point to the least defined point
 #in this case, the state at n1 is completely known. First value to find by iteration is:
-model = IterateModel(m1_r_t.MyModel, cond, 'molefrac_lpp').run()
+#model = IterateModel(m1_r_t.MyModel, cond, 'molefrac_lpp').run()
 
 #then 15, 5, 18 (5 in between due to prheat2r connecting it with point 16-17)
-#model = IterateModel(m1_r_t.MyModel, cond, 't_node15.1').run(model)
+
+####FIXME: iteration design for IterateModel should be improved!
+model = IterateModel(m1_r_t.MyModel, cond, 't_node15.1').run()
 
 #model = IterateModel(m1_r_t.MyModel, cond, 't_node43.1').run(model)
 

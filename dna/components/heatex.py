@@ -110,21 +110,20 @@ class PinchCalc:
 
             if len(x) > 1:
                 convergence = y[-2] - y[-1]
-                #curve fitting, maximum order 3
-                order = min(i - 1, 3)
+                #curve fitting, optimal max order is 7 (6 and 8 need more iterations)
+                #and to lag 2 orders behind number of iterations run so far (3 too slow, 1 too unstable)
+                order = max(1, min(i-2, 7))
 
-                z = scipy.polyfit(x, y, order)
-                p = scipy.poly1d(z)
+                z = scipy.polyfit(x, y, order, full=True)
+
+                p = scipy.poly1d(z[0])
 
                 dT_left = scipy.optimize.newton(p, dT_left)
 
 
             if len(x) == 1:
                 #for fast iteration, be sure to swing far from 0 on both sides
-                if side == 1:
-                    dT_left = dT_left - delta
-                else:
-                    dT_left = dT_left + delta
+                dT_left = dT_left + delta
 
             if side == 1:
                 _n2['t'] = _n3['t'] + dT_left

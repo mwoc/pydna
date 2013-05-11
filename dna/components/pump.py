@@ -1,5 +1,6 @@
 import states
 import component
+import warnings
 
 class Pump(component.Component):
     def nodes(self,in1,out1):
@@ -14,6 +15,10 @@ class Pump(component.Component):
         n2 = n['o'][0]
 
         states.state(n1)
+
+        if n1['q'] > 0:
+            msg = self.name +' - pump inlet has to be saturated or sub-cooled liquid, found %s!' % n1['q']
+            warnings.warn(msg, RuntimeWarning)
 
         n2['y'] = n1['y']
         n2['mdot'] = n1['mdot']

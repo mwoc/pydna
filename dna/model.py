@@ -1,4 +1,4 @@
-import scipy
+import numpy
 import scipy.optimize
 import refprop
 
@@ -39,6 +39,8 @@ class IterateModel:
         This runs an iteration to make a specific value in the model match a condition
         '''
 
+        #FIXME: Running an iteration with False as initial guess is troublesome
+
         print('Starting iteration for ', self.res_index)
 
         print(0, ' - ', self.res_index, ': ', self.cond[self.res_index])
@@ -76,12 +78,28 @@ class IterateModel:
 
             if len(x) > 1:
                 #curve fitting.
-                order = min(i - 1, 5)
+                order = max(1, min(i - 2, 5))
 
-                z = scipy.polyfit(x, y, order)
-                p = scipy.poly1d(z)
+                print('x = ', x)
+                print('y = ', y)
+                print('o = ', order)
 
-                self.cond[self.res_index] = scipy.optimize.newton(p,currRes['value'])
+                try:
+                    z = numpy.polyfit(x, y, order)
+                except numpy.RankWarning as e:
+                    #note: this is not getting called at all
+                    z = numpy.polyfit(x, y, order - 1, full=True)
+                    p = numpy.poly1d(z[0])
+                else:
+                    p = numpy.poly1d(z)
+
+                try:
+                    self.cond[self.res_index] = scipy.optimize.newton(p,currRes['value'])
+                except RuntimeError:
+                    print('x = ', x)
+                    print('y = ', y)
+                    print('o = ', order)
+                    print('z = ', z)
 
             elif len(x) == 1:
                 #manual guess

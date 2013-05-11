@@ -86,7 +86,6 @@ class MyModel(model.DnaModel):
 
         #node 6 already defined. Iteration might be needed
         #node 15 already defined. Iteration might be needed
-        #receiver: outlet should have same properties as node 1. Iteration might be needed
 
         #IMPORTANT: mass flow in distillation loop is calculated by recuperator. To prevent iteration
         # from setting distillation to 0, the heat transfer should be fixed and not depend on fluid properties.
@@ -96,6 +95,10 @@ class MyModel(model.DnaModel):
         components = self.components
         cond = self.cond
         result = {}
+
+        #guess params for dividing mass flow in splitprh1 and splitprh2
+        frac_stor = cond['Q_stor'] / (cond['Q_stor'] + cond['Q_rcvr'])
+        frac_rcvr = 1 - frac_stor
 
         #simulation params
         t_sat = cond['t_con'] + cond['pinch_con']
@@ -149,7 +152,7 @@ class MyModel(model.DnaModel):
 
         components['turbine'].calc(cond['nu_is'])
 
-        self.nodes[51]['mdot'] = 0 #not passing any flow through prheat2s yet
+        self.nodes[51]['mdot'] = self.nodes[2]['mdot'] * frac_stor
 
         components['splitprh2'].calc()
 
@@ -175,10 +178,9 @@ class MyModel(model.DnaModel):
 
         components['flashsep'].calc()
 
-        self.nodes[26]['mdot'] = 0
+        self.nodes[26]['mdot'] = self.nodes[23]['mdot'] * frac_stor
 
         components['splitprh1'].calc()
-
 
         #prheat1r
         self.nodes['15.1'].update({
@@ -224,11 +226,11 @@ class MyModel(model.DnaModel):
 
         ### Mass fraction magic ###
 
-        self.nodes[32]['mdot'] = 0 #FIXME
+        self.nodes[32]['mdot'] = self.nodes[30]['mdot'] * frac_stor
 
         components['split2r'].calc()
 
-        self.nodes[40]['mdot'] = 0 #FIXME
+        self.nodes[40]['mdot'] = self.nodes[11]['mdot'] * frac_stor
 
         components['split2l'].calc()
 
@@ -284,7 +286,7 @@ class MyModel(model.DnaModel):
         res['t_node6'] = {
             'value': self.nodes['6.1']['t'],
             'alter': self.nodes[6]['t'],
-            'range': [self.nodes['6.1']['t'], self.nodes[4]['t']]
+            'range': [self.nodes['6.1']['t']-5, self.nodes[4]['t']+5]
         }
         if self.cond['t_node6'] is not False:
             res['t_node6']['alter'] = self.cond['t_node6']
@@ -293,7 +295,7 @@ class MyModel(model.DnaModel):
         res['t_node15.1'] = {
             'value': self.nodes[15]['t'],
             'alter': self.nodes['15.1']['t'],
-            'range': [t_sat, self.nodes[15]['t']]
+            'range': [t_sat-5, self.nodes[15]['t']+5]
         }
         if self.cond['t_node15.1'] is not False:
             res['t_node15.1']['alter'] = self.cond['t_node15.1']
@@ -302,7 +304,7 @@ class MyModel(model.DnaModel):
         res['t_node15.1'] = {
             'value': self.nodes[43]['t'],
             'alter': self.nodes['43.1']['t'],
-            'range': [t_sat, self.nodes[43]['t']]
+            'range': [t_sat-5, self.nodes[43]['t']+5]
         }
         if self.cond['t_node43.1'] is not False:
             res['t_node43.1']['alter'] = self.cond['t_node43.1']
@@ -311,14 +313,14 @@ class MyModel(model.DnaModel):
         res['t_node18.1'] = {
             'value': self.nodes[18]['t'],
             'alter': self.cond['t_node18.1'],
-            'range': [self.nodes[16]['t'], self.nodes[1]['t']]
+            'range': [self.nodes[16]['t']-5, self.nodes[1]['t']+5]
         }
 
         #alter 45.1.t until it matches 45.t
         res['t_node18.1'] = {
             'value': self.nodes[45]['t'],
             'alter': self.cond['t_node45.1'],
-            'range': [self.nodes[44]['t'], self.nodes[1]['t']]
+            'range': [self.nodes[44]['t']-5, self.nodes[1]['t']+5]
         }
 
         return res

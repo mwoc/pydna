@@ -16,26 +16,24 @@ class HeatexTest(model.DnaModel):
         heatex = self.addComponent(comp.PinchHex, 'heatex').nodes(1, 2, 3, 4)
 
         self.nodes[1].update({
-            'media': 'other',
-            'cp': 1.5617, #kJ/kg*K
-            't': 427.83,
-            'p': 1
+            'media': 'kalina',
+            'y': 0.5,
+            't': 77.53,
+            'p': 0.857,
+            'mdot': 7.527
         })
-        self.nodes[2].update({
-            't': 180
-        })
+
 
         self.nodes[3].update({
             'media': 'kalina',
-            'y': 0.6,
-            't': 130,
-            'p': 100
-        })
-        self.nodes[4].update({
-            't': self.nodes[1]['t']-20
+            'y': 0.5,
+            't': 65,
+            'p': 100,
+            'mdot': 7.49
         })
 
-        heatex.calc(Nseg = 11, dTmin = 20, Q = 2245.094)
+
+        heatex.calc(Nseg = 11, dTmin = 5)
 
         return self
 
