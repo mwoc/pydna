@@ -118,23 +118,27 @@ class PinchCalc:
 
                 p = scipy.poly1d(z[0])
 
-                dT_left = scipy.optimize.newton(p, dT_left)
+                try:
+                    dT_left = scipy.optimize.newton(p, dT_left)
+                except RuntimeError as e:
+                    print(x)
+                    print(y)
+
+                    print(e)
+                    z = scipy.polyfit(x, y, order - 1, full=True)
+
+                    p = scipy.poly1d(z[0])
+
+                    dT_left = scipy.optimize.newton(p, dT_left)
 
 
             if len(x) == 1:
                 #for fast iteration, be sure to swing far from 0 on both sides
+                print(dT_left, delta)
                 dT_left = dT_left + delta
 
             if side == 1:
-                _n2['t'] = _n3['t'] + dT_left
-                states.state(_n2)
-
-                _n4['h'] = (_n3['h'] * _n3['mdot'] + (_n1['mdot'] * (_n1['h'] - _n2['h']))) / _n3['mdot']
-                states.state(_n4)
-
-                #update looping parameters
-                delta = _n1['t'] - (_n4['t'] + dTmin)
-            else:
+                #side 1 is hot side, 1 and 4
                 _n4['t'] = _n1['t'] - dT_left
                 states.state(_n4)
 
@@ -143,6 +147,16 @@ class PinchCalc:
 
                 #update looping parameters
                 delta = _n2['t'] - (_n3['t'] + dTmin)
+            else:
+                #side 2 is cold side, 2 and 3
+                _n2['t'] = _n3['t'] + dT_left
+                states.state(_n2)
+
+                _n4['h'] = (_n3['h'] * _n3['mdot'] + (_n1['mdot'] * (_n1['h'] - _n2['h']))) / _n3['mdot']
+                states.state(_n4)
+
+                #update looping parameters
+                delta = _n1['t'] - (_n4['t'] + dTmin)
 
             x.append(dT_left)
             y.append(delta)
