@@ -94,7 +94,6 @@ class MyModel(model.DnaModel):
         #environment params
         components = self.components
         cond = self.cond
-        result = {}
 
         #guess params for dividing mass flow in splitprh1 and splitprh2
         frac_stor = cond['Q_stor'] / (cond['Q_stor'] + cond['Q_rcvr'])
@@ -170,6 +169,11 @@ class MyModel(model.DnaModel):
         })
 
         self.nodes['6.1']['t'] = min(90, self.nodes[2]['t'])
+
+        if cond['t_node6'] is not False:
+            #minor corrections might be needed after first run
+            self.nodes['6.1']['t'] = cond['t_node6']
+
         self.nodes[7]['t'] = t_sat + 13 # < chosen to satisfy pinch
         self.nodes[21]['t'] = t_sat
         self.nodes[22]['t'] = min(70, self.nodes['6.1']['t'] - cond['pinch_hex']) # < not raise temperature too far
@@ -257,11 +261,40 @@ class MyModel(model.DnaModel):
         components['prheat2s'].calc(cond['Nseg'], cond['pinch_hex'])
 
         #merge streams 5+52 > 6
-
-        if cond['t_node6'] is not False:
-            self.nodes[6]['t'] = cond['t_node6']
-
         components['mixprh2'].calc()
+
+        self.efficiency()
+
+        return self
+
+    def efficiency(self):
+
+        Q_in = 0
+        W_in = 0
+        W_out = 0
+
+        #storage
+        Q_in = Q_in + self.nodes[45]['mdot'] * (self.nodes[46]['h'] - self.nodes[45]['h'])
+
+        #receiver
+        Q_in = Q_in + self.nodes[18]['mdot'] * (self.nodes[19]['h'] - self.nodes[18]['h'])
+
+        #lppump
+        W_in = W_in + self.nodes[9]['mdot'] * (self.nodes[10]['h'] - self.nodes[9]['h'])
+
+        #hppump r / s
+        W_in = W_in + (1 / self.cond['nu_pump']) * self.nodes[14]['mdot'] * (self.nodes[15]['h'] - self.nodes[14]['h'])
+        W_in = W_in + (1 / self.cond['nu_pump']) * self.nodes[42]['mdot'] * (self.nodes[43]['h'] - self.nodes[42]['h'])
+
+        #turbine
+        W_out = W_out + self.cond['nu_mech'] * (self.nodes[1]['mdot'] * (self.nodes[1]['h'] - self.nodes[2]['h']))
+
+        self.result['eff'] = (W_out - W_in) / Q_in
+
+        print('Q_in: ', Q_in)
+        print('W_in: ', W_in)
+        print('W_out: ', W_out)
+        print('eff: ', self.result['eff'])
 
         return self
 
@@ -286,16 +319,15 @@ class MyModel(model.DnaModel):
         #this means: match n6[t] and n6.1[t]
         node6 = {
             'cond': 't_node6',
-            'value': self.nodes['6.1']['t'],
-            'alter': self.nodes[6]['t'],
+            'value': self.nodes[6]['t'],
+            'alter': self.nodes['6.1']['t'],
             'range': [self.nodes['6.1']['t']-5, self.nodes[4]['t']+5]
         }
 
         #FIXME: This residual is not working accurately, it could be as much
         # as 0.3 K off while tolerance is at 0.0001
 
-        if self.cond['t_node6'] is not False:
-            node6['alter'] = self.cond['t_node6']
+
 
         res.append(node6)
 
