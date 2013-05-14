@@ -1,3 +1,4 @@
+import collections
 from numpy import linspace
 import matplotlib.pyplot as plt
 import csv
@@ -11,6 +12,9 @@ def round_down(num, divisor):
 def round_up(num, divisor):
     return num + (num%divisor)
 
+def iterable(obj):
+    return isinstance(obj, collections.Iterable)
+
 print('Loaded environment. Simulating...')
 
 #simulation conditions
@@ -21,6 +25,9 @@ cond['t_con'] = 20
 cond['molefrac_tur'] = 0.5
 
 cond['nu_is'] = 0.8
+cond['nu_mech'] = 0.98
+cond['nu_pump'] = 0.90
+
 cond['Q_rcvr'] = 20000
 cond['Q_stor'] = 5000
 
@@ -41,6 +48,8 @@ cond['t_node45.1'] = 80
 
 #pass initial conditions to model and run/iterate it
 model = IterateModel(m1_r_t.MyModel, cond).run()
+
+eff = model.result['eff']
 
 node = model.nodes
 com = model.result
@@ -76,47 +85,28 @@ with open('../result.csv','w',newline='',encoding='utf-8') as csvfile:
     print('Export done')
 
 print('Plotting...')
-#plot recup
-x = linspace(0,1,len(com['recup']['Th']))
-miny = round_down(min(min(com['recup']['Tc']),min(com['recup']['Th']))-1,10)
-maxy = round_up(max(max(com['recup']['Tc']),max(com['recup']['Th']))+1,10)
-plt.plot(x, com['recup']['Th'], 'r->',label='Hot')
-plt.plot(x, com['recup']['Tc'], 'b-<',label='Cold')
-plt.xlabel('Location in HEX')
-plt.ylabel(r'Temperature [$^\circ$C]')
-plt.title('Recup - Hot/cold flows through HEX - pinch: '+str(round(com['recup']['dTmin'],2))+' [K]')
-plt.ylim(miny,maxy)
-plt.grid(True)
-plt.savefig('../recup.png')
-plt.close()
 
-#plot prheat1
-x = linspace(0,1,len(com['prheat1r']['Th']))
-miny = round_down(min(min(com['prheat1r']['Tc']),min(com['prheat1r']['Th']))-1,10)
-maxy = round_up(max(max(com['prheat1r']['Tc']),max(com['prheat1r']['Th']))+1,10)
-plt.plot(x, com['prheat1r']['Th'], 'r->',label='Hot')
-plt.plot(x, com['prheat1r']['Tc'], 'b-<',label='Cold')
-plt.xlabel('Location in HEX')
-plt.ylabel(r'Temperature [$^\circ$C]')
-plt.title('prheat1r - Hot/cold flows through HEX - pinch: '+str(round(com['prheat1r']['dTmin'],2))+' [K]')
-plt.ylim(miny,maxy)
-plt.grid(True)
-plt.savefig('../prheat1r.png')
-plt.close()
+for i in com:
+    if iterable(com[i]) and 'Th' in com[i]:
 
-#plot prheat2
-x = linspace(0,1,len(com['prheat2r']['Th']))
-miny = round_down(min(min(com['prheat2r']['Tc']),min(com['prheat2r']['Th']))-1,10)
-maxy = round_up(max(max(com['prheat2r']['Tc']),max(com['prheat2r']['Th']))+1,10)
-plt.plot(x, com['prheat2r']['Th'], 'r->',label='Hot')
-plt.plot(x, com['prheat2r']['Tc'], 'b-<',label='Cold')
-plt.xlabel('Location in HEX')
-plt.ylabel(r'Temperature [$^\circ$C]')
-plt.title('prheat2r - Hot/cold flows through HEX - pinch: '+str(round(com['prheat2r']['dTmin'],2))+' [K]')
-plt.ylim(miny,maxy)
-plt.grid(True)
-plt.savefig('../prheat2r.png')
-plt.close()
+        curr = com[i]
+
+        x = linspace(0,1,len(curr['Th']))
+        miny = round_down(min(min(curr['Tc']),min(curr['Th']))-1,10)
+        maxy = round_up(max(max(curr['Tc']),max(curr['Th']))+1,10)
+        plt.plot(x, curr['Th'], 'r->',label='Hot')
+        plt.plot(x, curr['Tc'], 'b-<',label='Cold')
+        plt.xlabel('Location in HEX')
+        plt.ylabel(r'Temperature [$^\circ$C]')
+        plt.title('Hot/cold flows through HEX - pinch: '+str(round(curr['dTmin'],2))+' [K]')
+        plt.ylim(miny,maxy)
+        plt.grid(True)
+        plt.savefig('../pinch_' + str(i) + '.png')
+        plt.close()
+
+    else:
+        #do nothing
+        pass
 
 #plot
 print('Finished execution')

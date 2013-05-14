@@ -65,7 +65,7 @@ class IterateModel:
 
         #prepare iterator helpers
         iterate = []
-        tol = 0.0001
+        tol = 0.001
 
         for res_index, currRes in enumerate(res):
 
