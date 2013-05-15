@@ -61,6 +61,9 @@ def toRefprop(node):
 
     molWmix = float(x[0]) * float(molWNH3) + float(x[1]) * float(molWH2O) # g/mol
 
+    if 'mdot' in node:
+        prop['mdot'] = node['mdot']
+
     if 'p' in node:
         prop['p'] = node['p']*100 # hPa > kPa
 
@@ -105,6 +108,9 @@ def fromRefprop(prop):
     x = prop['x']
 
     molWmix = float(x[0]) * float(molWNH3) + float(x[1]) * float(molWH2O)
+
+    if 'mdot' in prop:
+        node['mdot'] = prop['mdot']
 
     #convert mol to kg, K to C, kPa to hPa
     if 'p' in prop:

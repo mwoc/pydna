@@ -79,6 +79,7 @@ class PinchCalc:
 
 
         #iteration params
+        tol = 0.1
         delta = 1
         convergence = 1
         i = 0
@@ -94,7 +95,7 @@ class PinchCalc:
 
         #tolerance of 0.01 K is close enough
         #do NOT alter convergence rate parameter. Too high value breaks design
-        while abs(delta) > 0.1 and abs(convergence) > 0.0005 and  i < 40:
+        while abs(delta) > tol and abs(convergence) > 0.0005 and  i < 40:
             #make local copies of input
             _n1 = self.n1.copy()
             _n2 = self.n2.copy()
@@ -164,7 +165,7 @@ class PinchCalc:
             i = i + 1
 
             #only accept positive delta for internal pinch calculation
-            if(delta >= 0):
+            if(delta >= 0 - tol):
                 #ok at least the pinch at in/outlets is ok. Now check
                 #it internally
                 try:
@@ -183,7 +184,7 @@ class PinchCalc:
 
             print('Iteration: ', i, '. Residual: ', y[-1])
 
-        if abs(delta) > 0.1:
+        if abs(delta) > tol:
             print(delta, convergence, i)
             raise ConvergenceError('No convergence reached')
 
@@ -272,6 +273,7 @@ class PinchHex(component.Component):
                     pinch = pincher.iterate(side=1)
                 except refprop.RefpropError as e:
                     print('First side failed, trying second. Reason:')
+                    print(e)
 
                     #if that failed, try from the other
                     try:
@@ -351,7 +353,13 @@ class Condenser(component.Component):
         n2['p'] = n1['p']
         n2['y'] = n1['y']
         n2['mdot'] = n1['mdot']
-        n2['q'] = 0
+
+        #if it is subcooled liquid entering the condenser, pass it through unamended
+        Tsat = states.state({'p': n1['p'], 'y': n1['y'], 'q': 0})['t']
+        if Tsat > n1['t']:
+            n2['t'] = n1['t']
+        else:
+            n2['q'] = 0
 
         states.state(n2)
 

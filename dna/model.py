@@ -1,6 +1,14 @@
 import numpy
 import scipy.optimize
 import refprop
+import csv
+
+def is_number(s):
+    try:
+        float(s)
+    except ValueError:
+        return False
+    return True
 
 class NameClash(Exception):
     pass
@@ -28,6 +36,38 @@ class DnaModel:
 
         return self
 
+    def export(self, filename):
+
+        #print to csv file
+        with open('../'+filename+'.csv','w',newline='',encoding='utf-8') as csvfile:
+            print('Exporting results to csv file...')
+            fieldnames = ['Node','from','to','media','y','mdot','t','p','h','q','s']
+            writer = csv.DictWriter(csvfile,fieldnames=fieldnames,restval='-',delimiter=',',quotechar='"',quoting=csv.QUOTE_MINIMAL)
+
+            writer.writerow(dict((fn,fn) for fn in fieldnames))
+
+            for i in sorted(self.nodes.keys(),key=float):
+                item = self.nodes[i]
+
+                #supercritical
+                if('q' in item and is_number(item['q']) and (item['q'] > 1.000 or item['q'] < 0.000)):
+                    item['q'] = '-'
+
+                if not 'media' in item:
+                    item['media'] = '-'
+
+                if not 'from' in item:
+                    item['from'] = '-'
+
+                if not 'to' in item:
+                    item['to'] = '-'
+
+                item['Node'] = i
+                writer.writerow(dict((k,item[k] if k in item else '-') for k in fieldnames))
+
+            csvfile.close()
+            print('Export done')
+
 class IterateParamHelper:
     def __init__(self):
         self.i = 0
@@ -36,6 +76,9 @@ class IterateParamHelper:
         self.delta = 1
 
 class IterateModel:
+    '''
+    My heart's a mess. Make me iterate better
+    '''
     def __init__(self, model, cond):
         self.model = model
         self.cond = cond
@@ -60,6 +103,8 @@ class IterateModel:
             print('Getting initial state')
             model = self.model(self.cond).init().run()
 
+            model.export('tmp0')
+
         print('Analyzing initial residuals')
         res = model.residuals()
 
@@ -82,6 +127,11 @@ class IterateModel:
                 raise Exception('Have to specify range')
 
             iterate.append(IterateParamHelper())
+
+            if self.cond[currRes['cond']] != False:
+                iterate[-1].delta = currRes['value'] - currRes['alter']
+                iterate[-1].x.append(self.cond[currRes['cond']])
+                iterate[-1].y.append(iterate[-1].delta)
 
         while abs(maxDelta) > tol and i < 10:
 
@@ -149,11 +199,10 @@ class IterateModel:
 
                         print('Using manual guess instead of: ',orig)
 
-                        #if len(x) > 1:
-                            #extra cleanup
-                            #x.pop()
-                            #x.pop()
-                            #x.push(self.cond[currRes['cond']])
+                        if len(currIter.x) > 1:
+                            #assume first guess is of bad quality
+                            currIter.x.pop(0)
+                            currIter.y.pop(0)
 
                     print(i + 1, ' - ', currRes['cond'], ': ', self.cond[currRes['cond']])
 
@@ -196,6 +245,13 @@ class IterateModel:
                         #be sure to not store exact matches, they break optimize()
                         currIter.x.append(self.cond[currRes['cond']])
                         currIter.y.append(currIter.delta)
+
+                    if len(currIter.x) > 3 and abs(currIter.delta) > 1:
+                        currIter.x = []
+                        currIter.y = []
+
+            #export temporary results after each iteration
+            model.export('tmp' + str(i))
 
         print('Finished iteration')
 

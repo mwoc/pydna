@@ -1,7 +1,6 @@
 import collections
 from numpy import linspace
 import matplotlib.pyplot as plt
-import csv
 
 import m1_r_t
 from model import IterateModel
@@ -22,14 +21,15 @@ cond = {}
 cond['t_steam'] = 450
 cond['p_hi'] = 100
 cond['t_con'] = 20
-cond['molefrac_tur'] = 0.5
+
+cond['molefrac_rcvr'] = 0.4
 
 cond['nu_is'] = 0.8
 cond['nu_mech'] = 0.98
 cond['nu_pump'] = 0.90
 
-cond['Q_rcvr'] = 20000
-cond['Q_stor'] = 5000
+cond['Q_rcvr'] = 12500
+cond['Q_stor'] = 12500
 
 cond['dT_con'] = 15
 cond['pinch_hex'] = 5
@@ -39,7 +39,12 @@ cond['pinch_stor'] = 20
 cond['Nseg'] = 5
 
 #simulation guesses (iterate!!):
-cond['molefrac_lpp'] = 0.29715426447
+cond['molefrac_tur'] = 0.5
+cond['molefrac_stor'] = 0.6
+cond['molefrac_lpp'] = 0.379
+cond['molefrac_n15'] = 0.4
+cond['molefrac_n43'] = cond['molefrac_stor']
+
 cond['t_node6'] = False #that means no start value is given
 cond['t_node15.1'] = False
 cond['t_node43.1'] = False
@@ -51,41 +56,10 @@ model = IterateModel(m1_r_t.MyModel, cond).run()
 
 eff = model.result['eff']
 
-node = model.nodes
-com = model.result
-
-#print to csv file
-with open('../result.csv','w',newline='',encoding='utf-8') as csvfile:
-    print('Exporting results to csv file...')
-    fieldnames = ['Node','from','to','media','y','mdot','t','p','h','q','s']
-    writer = csv.DictWriter(csvfile,fieldnames=fieldnames,restval='-',delimiter=',',quotechar='"',quoting=csv.QUOTE_MINIMAL)
-
-    writer.writerow(dict((fn,fn) for fn in fieldnames))
-
-    for i in sorted(node.keys(),key=float):
-        item = node[i]
-
-        #supercritical
-        if('q' in item and (item['q'] > 1.000 or item['q'] < 0.000)):
-            item['q'] = '-'
-
-        if not 'media' in item:
-            item['media'] = '-'
-
-        if not 'from' in item:
-            item['from'] = '-'
-
-        if not 'to' in item:
-            item['to'] = '-'
-
-        item['Node'] = i
-        writer.writerow(dict((k,item[k] if k in item else '-') for k in fieldnames))
-
-    csvfile.close()
-    print('Export done')
+model.export('result')
 
 print('Plotting...')
-
+com = model.result
 for i in com:
     if iterable(com[i]) and 'Th' in com[i]:
 

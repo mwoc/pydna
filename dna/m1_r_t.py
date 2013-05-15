@@ -32,12 +32,12 @@ class MyModel(model.DnaModel):
 
         self.addComponent(com.Splitter, 'split1').nodes(10, 11, 21)
 
-        self.addComponent(com.Splitter, 'split2l').nodes(11, 12, 40)
+        self.addComponent(com.DoubleSplitMix, 'dsm1').nodes(11, 30, 13, 41)
 
-        self.addComponent(com.Splitter, 'split2r').nodes(30, 31, 32)
+        #self.addComponent(com.Splitter, 'split2r').nodes(30, 31, 32)
 
         ### Receiver loop ###
-        self.addComponent(com.Mixer, 'mixer2r').nodes(12, 31, 13)
+        #self.addComponent(com.Mixer, 'mixer2r').nodes(12, 31, 13)
 
         self.addComponent(com.Condenser, 'hpconr').nodes(13, 14)
 
@@ -47,7 +47,7 @@ class MyModel(model.DnaModel):
 
         ### Storage loop ###
 
-        self.addComponent(com.Mixer, 'mixer2s').nodes(40, 32, 41)
+        #self.addComponent(com.Mixer, 'mixer2s').nodes(40, 32, 41)
 
         self.addComponent(com.Condenser, 'hpcons').nodes(41, 42)
 
@@ -107,9 +107,10 @@ class MyModel(model.DnaModel):
             't': t_sat,
             'q': 0
         })['p']
+
         p_me = states.state({
             'media': 'kalina',
-            'y': cond['molefrac_tur'],
+            'y': max(cond['molefrac_rcvr'], cond['molefrac_n43']),
             't': t_sat,
             'q': 0
         })['p']
@@ -117,7 +118,7 @@ class MyModel(model.DnaModel):
         #receiver conditions:
         self.nodes['18.1'].update({
             'media': 'kalina',
-            'y': cond['molefrac_tur'],
+            'y': cond['molefrac_rcvr'],
             'p': cond['p_hi'],
             't': cond['t_node18.1']
         })
@@ -136,7 +137,7 @@ class MyModel(model.DnaModel):
 
         self.nodes['45.1'].update({
             'media': 'kalina',
-            'y': cond['molefrac_tur'],
+            'y': cond['molefrac_n43'],
             'p': cond['p_hi'],
             't': cond['t_node45.1']
         })
@@ -176,7 +177,7 @@ class MyModel(model.DnaModel):
 
         self.nodes[7]['t'] = t_sat + 13 # < chosen to satisfy pinch
         self.nodes[21]['t'] = t_sat
-        self.nodes[22]['t'] = min(70, self.nodes['6.1']['t'] - cond['pinch_hex']) # < not raise temperature too far
+        self.nodes[22]['t'] = min(75, self.nodes['6.1']['t'] - cond['pinch_hex']) # < not raise temperature too far
 
         components['recup'].calc(cond['Nseg'], cond['pinch_hex'])
 
@@ -189,7 +190,7 @@ class MyModel(model.DnaModel):
         #prheat1r
         self.nodes['15.1'].update({
             'media': self.nodes[19]['media'],
-            'y': self.nodes[19]['y'],
+            'y': cond['molefrac_rcvr'],
             'mdot': self.nodes[19]['mdot'],
             'p': self.nodes[19]['p']
         })
@@ -203,7 +204,7 @@ class MyModel(model.DnaModel):
         #prheat1s
         self.nodes['43.1'].update({
             'media': self.nodes[46]['media'],
-            'y': self.nodes[46]['y'],
+            'y': cond['molefrac_n43'],
             'mdot': self.nodes[46]['mdot'],
             'p': self.nodes[46]['p']
         })
@@ -229,18 +230,37 @@ class MyModel(model.DnaModel):
         components['split1'].calc()
 
         ### Mass fraction magic ###
+        #mdot_tot = self.nodes[11]['mdot'] + self.nodes[30]['mdot']
+        #mdot_nh3 = self.nodes[11]['mdot'] * self.nodes[11]['y'] + self.nodes[30]['mdot'] * self.nodes[30]['y']
+        #mdot_h2o = mdot_tot - mdot_nh3
+        #print('Mdot: ', mdot_tot, '. NH3: ', mdot_nh3, '. H2O: ', mdot_h2o)
 
-        self.nodes[32]['mdot'] = self.nodes[30]['mdot'] * frac_stor
+        #mdot_stor = self.nodes[46]['mdot']
+        #mdot_rcvr = self.nodes[19]['mdot']
 
-        components['split2r'].calc()
+        #self.nodes[32]['mdot'] = self.nodes[30]['mdot'] * frac_stor
 
-        self.nodes[40]['mdot'] = self.nodes[11]['mdot'] * frac_stor
+        #components['split2r'].calc()
 
-        components['split2l'].calc()
+        #self.nodes[40]['mdot'] = self.nodes[11]['mdot'] * frac_stor #mdot_stor - self.nodes[32]['mdot']
 
-        components['mixer2r'].calc()
+        #components['split2l'].calc()
 
-        components['mixer2s'].calc()
+        #components['mixer2r'].calc()
+
+        #components['mixer2s'].calc()
+
+        self.nodes[13].update({
+            'y': cond['molefrac_rcvr'],
+            'mdot': self.nodes[19]['mdot']
+        })
+
+        self.nodes[41].update({
+            'y': cond['molefrac_stor'], # < this is a guess
+            'mdot': self.nodes[46]['mdot']
+        })
+
+        components['dsm1'].calc()
 
         ### Receiver loop ###
 
@@ -300,7 +320,12 @@ class MyModel(model.DnaModel):
 
     def residuals(self):
         '''
-        This returns residuals, not
+        This returns residuals, which modelIterator should use
+
+        Hypothesis:
+        Fixed y in rcvr
+        Y in stor is defined automatically by mdot ratio between rcvr and stor. If exact same mdot, y in stor deviates equally much from 0.5 as y_rcvr, but the other way. If higher mdot in stor, higher y in stor too.
+        Test tomorrow
         '''
 
         res = []
@@ -316,6 +341,22 @@ class MyModel(model.DnaModel):
             'range': [0, self.cond['molefrac_tur']]
         })
 
+        #res.append({
+        #    'cond': 'molefrac_n15',
+        #    'value': self.nodes[15]['y'],
+        #    'alter': self.cond['molefrac_n15'],
+        #    'range': [0, 1]
+        #})
+
+        res.append({
+            'cond': 'molefrac_n43',
+            'value': self.nodes[43]['y'],
+            'alter': self.nodes['43.1']['y'],
+            'range': [0, 1]
+        })
+
+        print(res[-1])
+
         #this means: match n6[t] and n6.1[t]
         node6 = {
             'cond': 't_node6',
@@ -327,9 +368,8 @@ class MyModel(model.DnaModel):
         #FIXME: This residual is not working accurately, it could be as much
         # as 0.3 K off while tolerance is at 0.0001
 
-
-
         res.append(node6)
+
 
         #is this needed? check:
 
@@ -362,7 +402,7 @@ class MyModel(model.DnaModel):
             'cond': 't_node18.1',
             'value': self.nodes[18]['t'],
             'alter': self.cond['t_node18.1'],
-            'range': [self.nodes[16]['t']-5, self.nodes[1]['t']+5]
+            'range': [self.nodes[16]['t']-5, self.nodes[2]['t']+5]
         })
 
         #alter 45.1.t until it matches 45.t
@@ -370,7 +410,7 @@ class MyModel(model.DnaModel):
             'cond': 't_node45.1',
             'value': self.nodes[45]['t'],
             'alter': self.cond['t_node45.1'],
-            'range': [self.nodes[44]['t']-5, self.nodes[1]['t']+5]
+            'range': [self.nodes[44]['t']-5, self.nodes[2]['t']+5]
         })
 
         return res
