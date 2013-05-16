@@ -1,4 +1,4 @@
-import numpy
+import numpy as np
 import scipy.optimize
 import refprop
 import csv
@@ -75,6 +75,113 @@ class IterateParamHelper:
         self.y = []
         self.delta = 1
 
+    def optimize(self, currVal):
+
+        newVal = False
+        tol = 0.01
+
+        if abs(self.delta) > 0.5 and len(self.x) <= 4:
+            #pre-seed x/y as long as delta is large. This should make
+            #the actual iteration later on quicker
+            print('manual')
+            newVal = currVal + 0.5 * self.delta
+
+        elif len(self.x) > 1:
+
+            try:
+                '''
+                First find order for current data set
+                If order higher than 2, cut off first item and try again
+                Lastly, find zero
+                '''
+                order = 0
+                delta = 1
+
+                if len(self.x) > 4:
+                    bmin = min(self.y)
+                    bmax = max(self.y)
+
+                    if abs(bmin) > abs(bmax):
+                        val = bmin
+                    else:
+                        val = bmax
+
+                    i = self.y.index(val)
+
+                    if i == len(self.x)-1:
+                        i = 0
+
+                    print('popping number ', i)
+                    self.x.pop(i)
+                    self.y.pop(i)
+
+
+                while abs(delta) > tol and order < len(self.x):
+
+                    order = order + 1
+
+                    z = np.polyfit(self.x, self.y, order, full=True)
+                    p = np.poly1d(z[0])
+
+                    if len(z[1]) == 1:
+                        delta = z[1]
+                    else:
+                        delta = 0
+
+                print('order: ', order)
+                print('delta: ', delta)
+
+                if order > 3:
+                    #anything higher than 2nd order is problematic, we want
+                    #at most cubic interpolation. Cut out the largest deviation
+                    print('popping tags')
+                    print(self.y)
+
+                    min_y = min(self.y)
+                    max_y = max(self.y)
+                    if abs(min_y) > abs(max_y):
+                        i = self.y.index(min_y)
+                    else:
+                        i = self.y.index(max_y)
+
+                    print('popping number ', i)
+                    self.x.pop(i)
+                    self.y.pop(i)
+
+                #try again
+                order = 0
+                delta = 1
+                while abs(delta) > tol and order < len(self.x):
+
+                    order = order + 1
+
+                    z = np.polyfit(self.x, self.y, order, full=True)
+                    p = np.poly1d(z[0])
+
+                    if len(z[1]) == 1:
+                        delta = z[1]
+                    else:
+                        delta = 0
+
+                #find zero
+                newVal = scipy.optimize.newton(p,currVal)
+
+            except RuntimeError as e:
+                #went an order too high
+                z = np.polyfit(self.x, self.y, order - 1, full=True)
+                p = np.poly1d(z[0])
+
+                newVal = scipy.optimize.newton(p,currVal)
+        else:
+            if currVal < 1:
+                #be extra careful for low values
+                newVal = currVal + 0.2 * self.delta
+            else:
+                newVal = currVal + 0.5 * self.delta
+
+        return newVal
+
+
 class IterateModel:
     '''
     My heart's a mess. Make me iterate better
@@ -133,7 +240,7 @@ class IterateModel:
                 iterate[-1].x.append(self.cond[currRes['cond']])
                 iterate[-1].y.append(iterate[-1].delta)
 
-        while abs(maxDelta) > tol and i < 10:
+        while abs(maxDelta) > tol and i < 15:
 
             print('Updating conditions based on residuals...')
             #loop over all residuals
@@ -153,34 +260,37 @@ class IterateModel:
                     #print('z = ', z)
 
 
-                    if len(currIter.x) > 1:
+                    #get new guess:
+                    self.cond[currRes['cond']] = currIter.optimize(currRes['alter'])
+
+                    #if len(currIter.x) > 1:
                         #curve fitting.
-                        order = max(1, min( len(currIter.x) - 2, 5))
+                    #    order = max(1, min( len(currIter.x) - 2, 5))
 
-                        try:
-                            z = numpy.polyfit(currIter.x, currIter.y, order)
-                        except numpy.RankWarning as e:
+                    #    try:
+                    #        z = np.polyfit(currIter.x, currIter.y, order)
+                    #    except np.RankWarning as e:
                             #note: this is not getting called at all
-                            z = numpy.polyfit(currIter.x, currIter.y, order - 1, full=True)
-                            p = numpy.poly1d(z[0])
-                        else:
-                            p = numpy.poly1d(z)
+                    #        z = np.polyfit(currIter.x, currIter.y, order - 1, full=True)
+                    #        p = np.poly1d(z[0])
+                    #    else:
+                    #        p = np.poly1d(z)
 
-                        try:
-                            self.cond[currRes['cond']] = scipy.optimize.newton(p,currRes['alter'])
-                        except RuntimeError:
-                            print('x = ', currIter.x)
-                            print('y = ', currIter.y)
-                            print('o = ', order)
-                            print('z = ', z)
+                    #    try:
+                    #        self.cond[currRes['cond']] = scipy.optimize.newton(p,currRes['alter'])
+                    #    except RuntimeError:
+                    #        print('x = ', currIter.x)
+                    #        print('y = ', currIter.y)
+                    #        print('o = ', order)
+                    #        print('z = ', z)
 
-                    elif len(currIter.x) == 1:
+                    #elif len(currIter.x) == 1:
                         #manual guess
-                        self.cond[currRes['cond']] = currRes['alter'] + currIter.delta
-                    else:
+                    #    self.cond[currRes['cond']] = currRes['alter'] + currIter.delta
+                    #else:
                         #if initial guess left empty on purpose, update with initial guess
-                        if self.cond[currRes['cond']] is False:
-                            self.cond[currRes['cond']] = currRes['alter'] + currIter.delta
+                    #    if self.cond[currRes['cond']] is False:
+                    #        self.cond[currRes['cond']] = currRes['alter'] + currIter.delta
 
                     #from here on self.cond[currRes['cond']] is guaranteed available, so use it
 
@@ -199,10 +309,10 @@ class IterateModel:
 
                         print('Using manual guess instead of: ',orig)
 
-                        if len(currIter.x) > 1:
+                        #if len(currIter.x) > 1:
                             #assume first guess is of bad quality
-                            currIter.x.pop(0)
-                            currIter.y.pop(0)
+                        #    currIter.x.pop(0)
+                        #    currIter.y.pop(0)
 
                     print(i + 1, ' - ', currRes['cond'], ': ', self.cond[currRes['cond']])
 
@@ -245,10 +355,6 @@ class IterateModel:
                         #be sure to not store exact matches, they break optimize()
                         currIter.x.append(self.cond[currRes['cond']])
                         currIter.y.append(currIter.delta)
-
-                    if len(currIter.x) > 3 and abs(currIter.delta) > 1:
-                        currIter.x = []
-                        currIter.y = []
 
             #export temporary results after each iteration
             model.export('tmp' + str(i))
