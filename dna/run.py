@@ -28,8 +28,8 @@ cond['nu_is'] = 0.8
 cond['nu_mech'] = 0.98
 cond['nu_pump'] = 0.90
 
-cond['Q_rcvr'] = 12500
-cond['Q_stor'] = 12500
+cond['Q_rcvr'] = 20000
+cond['Q_stor'] = 5000
 
 cond['dT_con'] = 15
 cond['pinch_hex'] = 5

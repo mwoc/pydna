@@ -178,13 +178,15 @@ class DoubleSplitMix(Component):
         tol = 0.1
 
         #iterate mass fraction left. Start with 50/50 split
-        yinit = (ni_lean['y'] * 0.5*ni_lean['mdot'] + ni_rich['y'] * 0.5*ni_rich['mdot']) / no_lean['mdot']
+        #yinit = (ni_lean['y'] * 0.5*ni_lean['mdot'] + ni_rich['y'] * 0.5*ni_rich['mdot']) / no_lean['mdot']
 
-        delta = no_lean['y'] - yinit
+        delta = 1#no_lean['y'] - yinit
         x = []
         y = []
-        ratio = 0.5
+        #ratio = 0.5
 
+
+        #print(delta)
 
         while abs(delta) > tol and i < 10:
             #try finding solution on the lean side
@@ -204,11 +206,22 @@ class DoubleSplitMix(Component):
 
             else:
                 #manual guess
-                ratio = ratio + delta
+                ratio = no_lean['mdot'] / (ni_lean['mdot'] + ni_rich['mdot'])
+
+            if ratio > 1:
+                ratio = 1
 
             ni_lean_a['mdot'] = ni_lean['mdot'] * ratio
 
             ni_rich_a['mdot'] = no_lean['mdot'] - ni_lean_a['mdot']
+
+            if(ni_rich_a['mdot'] > ni_rich['mdot']):
+                #dont exceed max
+                ni_rich_a['mdot'] = ni_rich['mdot']
+                ni_lean_a['mdot'] = no_lean['mdot'] - ni_rich_a['mdot']
+                ratio = ni_lean_a['mdot'] / ni_lean['mdot']
+
+
 
             _no_lean = no_lean.copy()
             _no_lean['y'] = (ni_lean_a['mdot'] * ni_lean_a['y'] + ni_rich_a['mdot'] * ni_rich_a['y']) / _no_lean['mdot']
@@ -218,8 +231,8 @@ class DoubleSplitMix(Component):
             x.append(ratio)
             y.append(delta)
 
-            print(x)
-            print(y)
+            print('x = ', x)
+            print('y = ', y)
 
         #found split ratio, solve splitters and mixers
 
@@ -236,10 +249,12 @@ class DoubleSplitMix(Component):
         ni_rich_a['mdot'] = no_lean['mdot'] - ni_lean_a['mdot']
         ni_rich_b['mdot'] = ni_rich['mdot'] - ni_rich_a['mdot']
 
-        print(ni_lean_a)
-        print(ni_lean_b)
-        print(ni_rich_a)
-        print(ni_rich_b)
+        print('no_lean = ', no_lean)
+        print('no_rich = ', no_rich)
+        print('ni_lean_a = ', ni_lean_a)
+        print('ni_lean_b = ', ni_lean_b)
+        print('ni_rich_a = ', ni_rich_a)
+        print('ni_rich_b = ', ni_rich_b)
 
 
         #mass fraction / enthalpy balance for lean:

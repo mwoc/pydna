@@ -110,7 +110,7 @@ class MyModel(model.DnaModel):
 
         p_me = states.state({
             'media': 'kalina',
-            'y': max(cond['molefrac_rcvr'], cond['molefrac_n43']),
+            'y': max(cond['molefrac_n15'], cond['molefrac_n43']),
             't': t_sat,
             'q': 0
         })['p']
@@ -118,7 +118,7 @@ class MyModel(model.DnaModel):
         #receiver conditions:
         self.nodes['18.1'].update({
             'media': 'kalina',
-            'y': cond['molefrac_rcvr'],
+            'y': cond['molefrac_n15'],
             'p': cond['p_hi'],
             't': cond['t_node18.1']
         })
@@ -177,7 +177,7 @@ class MyModel(model.DnaModel):
 
         self.nodes[7]['t'] = t_sat + 13 # < chosen to satisfy pinch
         self.nodes[21]['t'] = t_sat
-        self.nodes[22]['t'] = min(75, self.nodes['6.1']['t'] - cond['pinch_hex']) # < not raise temperature too far
+        self.nodes[22]['t'] = min(80, self.nodes['6.1']['t'] - cond['pinch_hex']) # < not raise temperature too far
 
         components['recup'].calc(cond['Nseg'], cond['pinch_hex'])
 
@@ -190,7 +190,7 @@ class MyModel(model.DnaModel):
         #prheat1r
         self.nodes['15.1'].update({
             'media': self.nodes[19]['media'],
-            'y': cond['molefrac_rcvr'],
+            'y': cond['molefrac_n15'],
             'mdot': self.nodes[19]['mdot'],
             'p': self.nodes[19]['p']
         })
@@ -251,7 +251,7 @@ class MyModel(model.DnaModel):
         #components['mixer2s'].calc()
 
         self.nodes[13].update({
-            'y': cond['molefrac_rcvr'],
+            'y': cond['molefrac_rcvr'], # < this is a guess
             'mdot': self.nodes[19]['mdot']
         })
 
@@ -338,15 +338,15 @@ class MyModel(model.DnaModel):
             'cond': 'molefrac_lpp',
             'value': self.nodes[8]['y'],
             'alter': self.cond['molefrac_lpp'],
-            'range': [0, self.cond['molefrac_tur']]
+            'range': [0, self.nodes[1]['y']]
         })
 
-        #res.append({
-        #    'cond': 'molefrac_n15',
-        #    'value': self.nodes[15]['y'],
-        #    'alter': self.cond['molefrac_n15'],
-        #    'range': [0, 1]
-        #})
+        res.append({
+            'cond': 'molefrac_n15',
+            'value': self.nodes[15]['y'],
+            'alter': self.cond['molefrac_n15'],
+            'range': [0, 1]
+        })
 
         res.append({
             'cond': 'molefrac_n43',

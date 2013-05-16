@@ -7,27 +7,27 @@ class DSMTest(DnaModel):
 
         self.nodes[11].update({
             'media': 'kalina',
-            'y': 0.33357,
-            'mdot': 6.54636240344001,
-            't': 25,
+            'y': 0.3331,
+            'mdot': 2*2.755028,
+            't': 32.198,
             'p': 4.7636
         })
         self.nodes[30].update({
             'media': 'kalina',
             'y': 0.95726,
-            'mdot': 2.9952214187568,
+            'mdot': 4.503 - 0.7557,
             't': 75,
             'p': 4.7636
         })
 
         self.nodes[13].update({
             'y': 0.4,
-            'mdot': 4.53935937260618
+            'mdot': 7.258
         })
 
         self.nodes[41].update({
             'y': 0.6,
-            'mdot': 5.00222444959064
+            'mdot': 1.999
         })
 
 
