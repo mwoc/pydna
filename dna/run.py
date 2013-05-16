@@ -28,8 +28,8 @@ cond['nu_is'] = 0.8
 cond['nu_mech'] = 0.98
 cond['nu_pump'] = 0.90
 
-cond['Q_rcvr'] = 20000
-cond['Q_stor'] = 5000
+cond['Q_rcvr'] = 12500
+cond['Q_stor'] = 12500
 
 cond['dT_con'] = 15
 cond['pinch_hex'] = 5
@@ -40,9 +40,9 @@ cond['Nseg'] = 5
 
 #simulation guesses (iterate!!):
 cond['molefrac_tur'] = 0.5
-cond['molefrac_stor'] = 0.6
+cond['molefrac_stor'] = 0.4
 cond['molefrac_lpp'] = 0.379
-cond['molefrac_n15'] = 0.4
+cond['molefrac_n15'] = 0.6
 cond['molefrac_n43'] = cond['molefrac_stor']
 
 cond['t_node6'] = False #that means no start value is given

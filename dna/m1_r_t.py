@@ -177,7 +177,7 @@ class MyModel(model.DnaModel):
 
         self.nodes[7]['t'] = t_sat + 13 # < chosen to satisfy pinch
         self.nodes[21]['t'] = t_sat
-        self.nodes[22]['t'] = min(80, self.nodes['6.1']['t'] - cond['pinch_hex']) # < not raise temperature too far
+        self.nodes[22]['t'] = min(75, self.nodes['6.1']['t'] - cond['pinch_hex']) # < not raise temperature too far
 
         components['recup'].calc(cond['Nseg'], cond['pinch_hex'])
 

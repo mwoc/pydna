@@ -80,11 +80,11 @@ class IterateParamHelper:
         newVal = False
         tol = 0.01
 
-        if abs(self.delta) > 0.5 and len(self.x) <= 3:
+        if abs(self.delta) > 0.5 and len(self.x) <= 4:
             #pre-seed x/y as long as delta is large. This should make
             #the actual iteration later on quicker
             print('manual')
-            newVal = currVal + 0.25 * self.delta
+            newVal = currVal + 0.5 * self.delta
 
         elif len(self.x) > 1:
 
@@ -97,7 +97,7 @@ class IterateParamHelper:
                 order = 0
                 delta = 1
 
-                if len(self.x) > 3:
+                if len(self.x) > 4:
                     bmin = min(self.y)
                     bmax = max(self.y)
 
@@ -181,7 +181,7 @@ class IterateParamHelper:
                 #be extra careful for low values
                 newVal = currVal + 0.25 * self.delta
             else:
-                newVal = currVal + 0.25 * self.delta
+                newVal = currVal + 0.5 * self.delta
 
         return newVal
 

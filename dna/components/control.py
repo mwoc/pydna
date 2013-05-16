@@ -175,7 +175,7 @@ class DoubleSplitMix(Component):
             no_lean = n4
 
         i = 0
-        tol = 0.1
+        tol = 0.01
 
         #iterate mass fraction left. Start with 50/50 split
         #yinit = (ni_lean['y'] * 0.5*ni_lean['mdot'] + ni_rich['y'] * 0.5*ni_rich['mdot']) / no_lean['mdot']
@@ -204,9 +204,11 @@ class DoubleSplitMix(Component):
 
                 ratio = scipy.optimize.newton(p,ratio)
 
-            else:
+            elif len(x) == 1:
                 #manual guess
                 ratio = no_lean['mdot'] / (ni_lean['mdot'] + ni_rich['mdot'])
+            else:
+                ratio = 0.5
 
             if ratio > 1:
                 ratio = 1
@@ -227,6 +229,11 @@ class DoubleSplitMix(Component):
             _no_lean['y'] = (ni_lean_a['mdot'] * ni_lean_a['y'] + ni_rich_a['mdot'] * ni_rich_a['y']) / _no_lean['mdot']
 
             delta = no_lean['y'] - _no_lean['y']
+
+            if ratio in x:
+                ix = x.index(ratio)
+                x.pop(ix)
+                y.pop(ix)
 
             x.append(ratio)
             y.append(delta)
