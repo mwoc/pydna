@@ -80,7 +80,7 @@ class IterateParamHelper:
         newVal = False
         tol = 0.01
 
-        if abs(self.delta) > 0.5 and len(self.x) <= 4:
+        if abs(self.delta) > 0.5 and len(self.x) <= 3:
             #pre-seed x/y as long as delta is large. This should make
             #the actual iteration later on quicker
             print('manual')
@@ -97,7 +97,7 @@ class IterateParamHelper:
                 order = 0
                 delta = 1
 
-                if len(self.x) > 4:
+                if len(self.x) > 3:
                     bmin = min(self.y)
                     bmax = max(self.y)
 
@@ -244,7 +244,7 @@ class IterateModel:
                 iterate[-1].x.append(self.cond[currRes['cond']])
                 iterate[-1].y.append(iterate[-1].delta)
 
-        while abs(maxDelta) > tol and i < 15:
+        while abs(maxDelta) > tol and i < 20:
 
             print('Updating conditions based on residuals...')
             #loop over all residuals

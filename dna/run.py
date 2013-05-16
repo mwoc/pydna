@@ -22,7 +22,7 @@ cond['t_steam'] = 450
 cond['p_hi'] = 100
 cond['t_con'] = 20
 
-cond['molefrac_rcvr'] = 0.4
+cond['molefrac_rcvr'] = 0.45
 
 cond['nu_is'] = 0.8
 cond['nu_mech'] = 0.98
@@ -40,9 +40,9 @@ cond['Nseg'] = 5
 
 #simulation guesses (iterate!!):
 cond['molefrac_tur'] = 0.5
-cond['molefrac_stor'] = 0.4
+cond['molefrac_stor'] = 0.45
 cond['molefrac_lpp'] = 0.379
-cond['molefrac_n15'] = 0.6
+cond['molefrac_n15'] = 0.55
 cond['molefrac_n43'] = cond['molefrac_stor']
 
 cond['t_node6'] = False #that means no start value is given
