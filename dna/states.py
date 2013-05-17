@@ -191,8 +191,24 @@ def refpropState(node):
     else:
         raise InputError('state','Missing inputs for: '.str(_node))
 
-    #calculate
-    prop = rp.flsh(mode, in1, in2, _node['x'])
+    try:
+        #calculate
+        prop = rp.flsh(mode, in1, in2, _node['x'])
+    except rp.RefpropError as e:
+        #normal flsh failed, try flsh2 as well
+        try:
+            if mode is 'ph':
+                #assume something in the 2-phase region. temperature changes very little with enthalpy
+                x = _node['x']
+                molWmix = float(x[0]) * float(molWNH3) + float(x[1]) * float(molWH2O)
+                propl = rp.flsh('ph', in1, in2 - 5*molWmix, _node['x'])
+                propr = rp.flsh('ph', in1, in2 + 5*molWmix, _node['x'])
+                t = (propl['t'] + propr['t']) / 2
+
+                prop = rp.flsh('tp', t, in1, _node['x'])
+        except rp.RefpropError as e:
+            print(node)
+            raise(e)
 
     #convert back from refprop notation, then update node
     node.update(fromRefprop(prop))
