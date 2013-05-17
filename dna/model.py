@@ -41,7 +41,7 @@ class DnaModel:
         #print to csv file
         with open('../'+filename+'.csv','w',newline='',encoding='utf-8') as csvfile:
             print('Exporting results to csv file...')
-            fieldnames = ['Node','from','to','media','y','mdot','t','p','h','q','s']
+            fieldnames = ['Node','from','to','media','y','mdot','cp','t','p','h','q','s','e']
             writer = csv.DictWriter(csvfile,fieldnames=fieldnames,restval='-',delimiter=',',quotechar='"',quoting=csv.QUOTE_MINIMAL)
 
             writer.writerow(dict((fn,fn) for fn in fieldnames))
@@ -333,6 +333,7 @@ class IterateModel:
                 model.run()
             except refprop.RefpropError as e:
                 print(e)
+                raise(e)
             else:
                 print('Ran model. Updating guesses')
 
