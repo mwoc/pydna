@@ -238,8 +238,8 @@ class DoubleSplitMix(Component):
             x.append(ratio)
             y.append(delta)
 
-            print('x = ', x)
-            print('y = ', y)
+            #print('x = ', x)
+            #print('y = ', y)
 
         #found split ratio, solve splitters and mixers
 
@@ -256,12 +256,12 @@ class DoubleSplitMix(Component):
         ni_rich_a['mdot'] = no_lean['mdot'] - ni_lean_a['mdot']
         ni_rich_b['mdot'] = ni_rich['mdot'] - ni_rich_a['mdot']
 
-        print('no_lean = ', no_lean)
-        print('no_rich = ', no_rich)
-        print('ni_lean_a = ', ni_lean_a)
-        print('ni_lean_b = ', ni_lean_b)
-        print('ni_rich_a = ', ni_rich_a)
-        print('ni_rich_b = ', ni_rich_b)
+        #print('no_lean = ', no_lean)
+        #print('no_rich = ', no_rich)
+        #print('ni_lean_a = ', ni_lean_a)
+        #print('ni_lean_b = ', ni_lean_b)
+        #print('ni_rich_a = ', ni_rich_a)
+        #print('ni_rich_b = ', ni_rich_b)
 
 
         #mass fraction / enthalpy balance for lean:
