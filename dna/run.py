@@ -47,6 +47,7 @@ cond['molefrac_n43'] = cond['molefrac_stor']
 
 cond['t_node6'] = False #that means no start value is given
 cond['t_node15.1'] = False
+cond['t_node16.1'] = False
 cond['t_node43.1'] = False
 cond['t_node18.1'] = 80
 cond['t_node45.1'] = 80
