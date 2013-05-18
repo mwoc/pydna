@@ -1,4 +1,5 @@
 import states
+from iterate import IterateParamHelper
 import scipy
 import scipy.optimize
 import refprop
@@ -82,11 +83,13 @@ class PinchCalc:
         tol = 0.1
         delta = 1
         convergence = 1
+
+        currIter = IterateParamHelper()
+
         i = 0
         x = []
         y = []
-        w = []#maybe implement weights for data points. Leaving it out for now
-        #as it's difficult to define
+
         dT_left = dTmin
 
         result = {}
@@ -109,31 +112,12 @@ class PinchCalc:
 
             dT_left = dTmin
 
-            if len(x) > 1:
-                convergence = y[-2] - y[-1]
-                #curve fitting, optimal max order is 7 (6 and 8 need more iterations)
-                #and to lag 2 orders behind number of iterations run so far (3 too slow, 1 too unstable)
-                order = max(1, min(i-2, 7))
+            if len(currIter.x) > 1:
+                convergence = currIter.y[-2] - currIter.y[-1]
 
-                z = scipy.polyfit(x, y, order, full=True)
+                dT_left = currIter.optimize(dT_left, manual=False)
 
-                p = scipy.poly1d(z[0])
-
-                try:
-                    dT_left = scipy.optimize.newton(p, dT_left)
-                except RuntimeError as e:
-                    print(x)
-                    print(y)
-
-                    print(e)
-                    z = scipy.polyfit(x, y, order - 1, full=True)
-
-                    p = scipy.poly1d(z[0])
-
-                    dT_left = scipy.optimize.newton(p, dT_left)
-
-
-            if len(x) == 1:
+            if len(currIter.x) == 1:
                 #for fast iteration, be sure to swing far from 0 on both sides
                 print(dT_left, delta)
                 dT_left = dT_left + delta
@@ -159,9 +143,10 @@ class PinchCalc:
                 #update looping parameters
                 delta = _n1['t'] - (_n4['t'] + dTmin)
 
-            x.append(dT_left)
-            y.append(delta)
-            w.append(1)
+            #currIter.delta = delta
+            currIter.x.append(dT_left)
+            currIter.y.append(delta)
+
             i = i + 1
 
             #only accept positive delta for internal pinch calculation
@@ -178,11 +163,11 @@ class PinchCalc:
                 else:
                     #calculation succeeded. external delta is not valid anymore,
                     #store internal delta instead:
-                    y.pop()
+                    currIter.y.pop()
                     delta = result['pinch']['dTmin'] - dTmin
-                    y.append(delta)
+                    currIter.y.append(delta)
 
-            print('Iteration: ', i, '. Residual: ', y[-1])
+            print('Iteration: ', i, '. Residual: ', currIter.y[-1])
 
         if abs(delta) > tol:
             print(delta, convergence, i)
