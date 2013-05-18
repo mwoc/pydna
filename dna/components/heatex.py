@@ -61,7 +61,7 @@ class PinchCalc:
             T3_ = states.state(n3_)['t']
             Tc.append(T3_)
 
-            if(T2_ - T3_ < dT_pinch):
+            if T2_ - T3_ < dT_pinch:
                 pinch_pos = i
                 dT_pinch = T2_ - T3_
 
@@ -87,14 +87,23 @@ class PinchCalc:
         currIter = IterateParamHelper()
 
         i = 0
-        x = []
-        y = []
 
         dT_left = dTmin
 
         result = {}
 
         print('Running pinch point iteration, this may take a while...')
+
+        find_mdot = False
+        find_mdot1 = False
+        find_mdot3 = False
+        # if enough info is known about the heat transfer, we can deduct an mdot
+        if not 'mdot' in n1:
+            find_mdot = find_mdot1 = True
+            #
+        elif not 'mdot' in n3:
+            find_mdot = find_mdot3 = True
+            #
 
         #tolerance of 0.01 K is close enough
         #do NOT alter convergence rate parameter. Too high value breaks design
@@ -105,7 +114,7 @@ class PinchCalc:
             _n3 = self.n3.copy()
             _n4 = self.n4.copy()
 
-            if(_n1['mdot'] <= 0 or _n3['mdot'] <= 0):
+            if _n1['mdot'] <= 0 or _n3['mdot'] <= 0:
                 #no iteration possible, early return
                 result['pinch'] = self.check(_n1, _n2, _n3, _n4)
                 return result['pinch']
@@ -150,7 +159,7 @@ class PinchCalc:
             i = i + 1
 
             #only accept positive delta for internal pinch calculation
-            if(delta >= 0 - tol):
+            if delta >= 0 - tol:
                 #ok at least the pinch at in/outlets is ok. Now check
                 #it internally
                 try:
@@ -175,7 +184,7 @@ class PinchCalc:
 
         print('Pinch point iteration finished.')
 
-        if(not 'pinch' in result):
+        if not 'pinch' in result:
             print('No pinch solution found')
             return False
         else:
@@ -231,21 +240,21 @@ class PinchHex(component.Component):
 
         calc = False
 
-        if('t' in n2):
+        if 't' in n2:
             states.state(n2) #hot outlet
 
-        if('t' in n4):
+        if 't' in n4:
             states.state(n4) #cold outlet
 
         #initiate pincher for later use
         pincher = PinchCalc(n1, n2, n3, n4, Nseg, dTmin)
 
         #find any unknown inputs:
-        if(not 't' in n2 and not 't' in n4):
+        if not 't' in n2 and not 't' in n4:
             #find pinch by iteration, for given mass flow rates and inlet temperatures
             calc = True
 
-            if(n1['mdot'] <= 0 or n3['mdot'] <= 0):
+            if n1['mdot'] <= 0 or n3['mdot'] <= 0:
                 #no heat exchange at all
                 n2['t'] = n1['t']
                 states.state(n2)
@@ -275,19 +284,19 @@ class PinchHex(component.Component):
                         print('Second side iteration also failed.')
                         raise Exception(e)
 
-        elif(not 't' in n4):
+        elif not 't' in n4:
             #calculate T4 for given mass flow rates and other temperatures
             calc = True
             n4['h'] = (n3['h'] * n3['mdot'] + (n1['mdot'] * (n1['h'] - n2['h']))) / n3['mdot']
             states.state(n4)
 
-        elif(not 't' in n2):
+        elif not 't' in n2:
             #calculate T2 for given mass flow rates and other temperatures
             calc = True
             n2['h'] = (n1['h'] * n1['mdot'] - (n3['mdot'] * (n4['h'] - n3['h']))) / n1['mdot']
             states.state(n2)
 
-        if(not 'mdot' in n3):
+        if not 'mdot' in n3:
             #calculate m3 for given m1 or Q, and given temperatures
             calc = True
             if not 'mdot' in n1:
@@ -295,7 +304,7 @@ class PinchHex(component.Component):
 
             n3['mdot'] = ((n1['h'] - n2['h']) * n1['mdot']) / (n4['h'] - n3['h'])
 
-        elif(not 'mdot' in n1):
+        elif not 'mdot' in n1:
             #calculate m1 for given m3 or Q, and given temperatures
             calc = True
 
@@ -304,7 +313,7 @@ class PinchHex(component.Component):
 
             n1['mdot'] = ((n4['h'] - n3['h']) * n3['mdot']) / (n1['h'] - n2['h'])
 
-        if(calc == False):
+        if calc == False:
             print('Model overly specified for heatex')
 
         n2['mdot'] = n1['mdot']

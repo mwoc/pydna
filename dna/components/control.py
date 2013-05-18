@@ -44,20 +44,20 @@ class Mixer(Component):
         if 'media' in n1:
             n3['media'] = n2['media'] = n1['media']
 
-        if(n1['p'] != n2['p']):
+        if n1['p'] != n2['p']:
             raise InputError('mixer','pressure of inlets must be equal')
 
         n3['p'] = n2['p'] = n1['p']
 
         #mass balance
-        if(not 'mdot' in n3):
+        if not 'mdot' in n3:
             n3['mdot'] = n1['mdot'] + n2['mdot']
-        elif(not 'mdot' in n2):
+        elif not 'mdot' in n2:
             n2['mdot'] = n3['mdot'] - n1['mdot']
-        elif(not 'mdot' in n1):
+        elif not 'mdot' in n1:
             n1['mdot'] = n3['mdot'] - n2['mdot']
         else:
-            if(n3['mdot'] != (n1['mdot']+n2['mdot'])):
+            if n3['mdot'] != (n1['mdot']+n2['mdot']):
                 raise InputError('mixer','mass flow rates do not match')
 
         if n3['mdot'] == 0:
@@ -92,14 +92,14 @@ class Splitter(Component):
         if 'media' in n1:
             n3['media'] = n2['media'] = n1['media']
 
-        if(not 'mdot' in n2):
+        if not 'mdot' in n2:
             n2['mdot'] = n1['mdot'] - n3['mdot']
-        elif(not 'mdot' in n3):
+        elif not 'mdot' in n3:
             n3['mdot'] = n1['mdot'] - n2['mdot']
-        elif(not 'mdot' in n1):
+        elif not 'mdot' in n1:
             n1['mdot'] = n2['mdot'] + n3['mdot']
         else:
-            if(n1['mdot'] != (n2['mdot']+n3['mdot'])):
+            if n1['mdot'] != (n2['mdot']+n3['mdot']):
                 raise InputError('splitter','mass flow rates do not match')
 
         n2.update({
@@ -217,13 +217,11 @@ class DoubleSplitMix(Component):
 
             ni_rich_a['mdot'] = no_lean['mdot'] - ni_lean_a['mdot']
 
-            if(ni_rich_a['mdot'] > ni_rich['mdot']):
+            if ni_rich_a['mdot'] > ni_rich['mdot']:
                 #dont exceed max
                 ni_rich_a['mdot'] = ni_rich['mdot']
                 ni_lean_a['mdot'] = no_lean['mdot'] - ni_rich_a['mdot']
                 ratio = ni_lean_a['mdot'] / ni_lean['mdot']
-
-
 
             _no_lean = no_lean.copy()
             _no_lean['y'] = (ni_lean_a['mdot'] * ni_lean_a['y'] + ni_rich_a['mdot'] * ni_rich_a['y']) / _no_lean['mdot']
@@ -293,7 +291,7 @@ class DoubleSplitMix(Component):
 
         n4['media'] = n3['media'] = n1['media']
 
-        if(n1['p'] != n2['p']):
+        if n1['p'] != n2['p']:
             raise InputError('mixer','pressure of inlets must be equal')
 
         n4['p'] = n3['p'] = n2['p'] = n1['p']

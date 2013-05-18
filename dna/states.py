@@ -164,27 +164,27 @@ def refpropState(node):
     _node = toRefprop(node)
 
     #figure out which inputs to use (sorted by priority)
-    if('p' in _node and 'h' in _node):
+    if 'p' in _node and 'h' in _node:
         mode = 'ph'
         in1 = _node['p']
         in2 = _node['h']
-    elif('p' in _node and 'e' in _node):
+    elif 'p' in _node and 'e' in _node:
         mode = 'pe'
         in1 = _node['p']
         in2 = _node['e']
-    elif('p' in _node and 's' in _node):
+    elif 'p' in _node and 's' in _node:
         mode = 'ps'
         in1 = _node['p']
         in2 = _node['s']
-    elif('p' in _node and 'q' in _node):
+    elif 'p' in _node and 'q' in _node:
         mode = 'pq'
         in1 = _node['p']
         in2 = _node['q']
-    elif('t' in _node and 'p' in _node):
+    elif 't' in _node and 'p' in _node:
         mode = 'tp'
         in1 = _node['t']
         in2 = _node['p']
-    elif('t' in _node and 'q' in _node):
+    elif 't' in _node and 'q' in _node:
         mode = 'tq'
         in1 = _node['t']
         in2 = _node['q']

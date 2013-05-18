@@ -20,7 +20,7 @@ class DnaModel:
         self.result = {}
 
     def addComponent(self,constructor,name):
-        if(name in self.components):
+        if name in self.components:
             raise NameClash('Name must be unique')
 
         self.components[name] = constructor(self,name)
@@ -49,7 +49,7 @@ class DnaModel:
                 item = self.nodes[i]
 
                 #supercritical
-                if('q' in item and is_number(item['q']) and (item['q'] > 1.000 or item['q'] < 0.000)):
+                if 'q' in item and is_number(item['q']) and (item['q'] > 1.000 or item['q'] < 0.000):
                     item['q'] = '-'
 
                 if not 'media' in item:

@@ -8,7 +8,7 @@ class Component:
         #self.params = {}
 
     def ensureNodeExists(self,index):
-        if(not index in self.model.nodes):
+        if not index in self.model.nodes:
             self.model.nodes[index] = {}
 
     def addInlet(self,index):
