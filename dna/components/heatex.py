@@ -98,10 +98,10 @@ class PinchCalc:
         find_mdot1 = False
         find_mdot3 = False
         # if enough info is known about the heat transfer, we can deduct an mdot
-        if not 'mdot' in n1:
+        if not 'mdot' in self.n1:
             find_mdot = find_mdot1 = True
             #
-        elif not 'mdot' in n3:
+        elif not 'mdot' in self.n3:
             find_mdot = find_mdot3 = True
             #
 

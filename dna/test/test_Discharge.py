@@ -11,29 +11,29 @@ def round_up(num, divisor):
     return num + (num%divisor)
 
 #actual test:
-class StorageTest(model.DnaModel):
+class DischargeTest(model.DnaModel):
     def run(self):
         heatex = self.addComponent(comp.PinchHex, 'heatex').nodes(1, 2, 3, 4)
 
         self.nodes[1].update({
+            'media': 'other',
+            'cp': 1.5617, #kJ/kg*K
+            't': 430,
+            'p': 1
+        })
+
+        self.nodes[2]['t'] = 180
+
+        self.nodes[3].update({
             'media': 'kalina',
-            'y': 0.6,
-            'mdot': 1,
-            't': 450,
+            'y': 0.9,
+            't': 90,
             'p': 100
         })
 
+        self.nodes[4]['t'] = 425
 
-        self.nodes[3].update({
-            'media': 'other',
-            'cp': 1.5617, #kJ/kg*K
-            't': 180,
-            'p': 1,
-            'mdot': 2
-        })
-
-
-        heatex.calc(Nseg = 11, dTmin = 20)
+        heatex.calc(Nseg = 11, dTmin = 5, Q = 12500)
 
         return self
 
@@ -52,7 +52,7 @@ class StorageTest(model.DnaModel):
         plt.title('Hot/cold flows through HEX - pinch: ' + str(round(result['dTmin'], 2)) + ' [K]')
         plt.ylim(miny, maxy)
         plt.grid(True)
-        plt.savefig('../output/storageTest.png')
+        plt.savefig('../output/dischargeTest.png')
         plt.close()
 
         return self
@@ -62,10 +62,10 @@ class StorageTest(model.DnaModel):
 
         print('Hot inlet: ',n[1])
         print('Hot outlet: ',n[2])
-        print('Energy difference: ', n[1]['mdot'] * (n[2]['h'] - n[1]['h']),' (expected -2245.094)')
+        print('Energy difference: ', n[1]['mdot'] * (n[2]['h'] - n[1]['h']),' (expected -12500)')
 
         print('Cold inlet: ',n[3])
         print('Cold outlet: ',n[4])
-        print('Energy difference: ', n[3]['mdot'] * (n[4]['h'] - n[3]['h']),' (expected  2245.094)')
+        print('Energy difference: ', n[3]['mdot'] * (n[4]['h'] - n[3]['h']),' (expected  12500)')
 
         return self
