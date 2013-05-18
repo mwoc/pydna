@@ -107,7 +107,7 @@ class PinchCalc:
 
         #tolerance of 0.01 K is close enough
         #do NOT alter convergence rate parameter. Too high value breaks design
-        while abs(delta) > tol and abs(convergence) > 0.0005 and  i < 40:
+        while abs(delta) > tol and abs(convergence) > 0.0005 and  i < 20:
             #make local copies of input
             _n1 = self.n1.copy()
             _n2 = self.n2.copy()
