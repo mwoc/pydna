@@ -52,7 +52,7 @@ class HeatexTest(model.DnaModel):
         plt.title('Hot/cold flows through HEX - pinch: ' + str(round(result['dTmin'], 2)) + ' [K]')
         plt.ylim(miny, maxy)
         plt.grid(True)
-        plt.savefig('../../heatexTest.png')
+        plt.savefig('../output/heatexTest.png')
         plt.close()
 
         return self

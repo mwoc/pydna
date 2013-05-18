@@ -39,7 +39,7 @@ class DnaModel:
     def export(self, filename):
 
         #print to csv file
-        with open('../'+filename+'.csv','w',newline='',encoding='utf-8') as csvfile:
+        with open('../output/'+filename+'.csv','w',newline='',encoding='utf-8') as csvfile:
             print('Exporting results to csv file...')
             fieldnames = ['Node','from','to','media','y','mdot','cp','t','p','h','q','s','e']
             writer = csv.DictWriter(csvfile,fieldnames=fieldnames,restval='-',delimiter=',',quotechar='"',quoting=csv.QUOTE_MINIMAL)

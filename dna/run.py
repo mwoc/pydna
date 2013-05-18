@@ -76,7 +76,7 @@ for i in com:
         plt.title('Hot/cold flows through HEX - pinch: '+str(round(curr['dTmin'],2))+' [K]')
         plt.ylim(miny,maxy)
         plt.grid(True)
-        plt.savefig('../pinch_' + str(i) + '.png')
+        plt.savefig('../output/pinch_' + str(i) + '.png')
         plt.close()
 
     else:
