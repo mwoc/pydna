@@ -1,7 +1,7 @@
 import components as comp
 import model
 
-#actual test:
+# Actual test:
 class ReceiverTest(model.DnaModel):
     def run(self):
         rcvr = self.addComponent(comp.Receiver, 'receiver').nodes(1, 2)

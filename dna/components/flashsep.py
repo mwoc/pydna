@@ -19,7 +19,7 @@ class FlashSep(component.Component):
         if 'media' in n1:
             n3['media'] = n2['media'] = n1['media']
 
-        #inlet
+        # Inlet
         states.state(n1)
 
         flowFrac = n1['q']
@@ -35,18 +35,18 @@ class FlashSep(component.Component):
         n2['mdot'] = flowFrac * n1['mdot']
         n3['mdot'] = (1-flowFrac) * n1['mdot']
 
-        #vapour outlet
+        # Vapour outlet
         n2['p'] = n1['p']
         n2['t'] = n1['t']
         n2['y'] = n1['yvap']
 
-        #liquid outlet
+        # Liquid outlet
         n3['p'] = n1['p']
         n3['t'] = n1['t']
         n3['y'] = n1['yliq']
 
-        #yvap and yliq might be a bit off. Iterate to get right value
-        #Only changing value in n2 to prevent vapour in liquid outlet
+        # yvap and yliq might be a bit off. Iterate to get right value
+        # Only changing value in n2 to prevent vapour in liquid outlet
         i = 0
         x = []
         y = []
@@ -56,7 +56,7 @@ class FlashSep(component.Component):
         while abs(delta) > 0.00001 and i < 10:
 
             if len(x) > 1:
-                #curve fitting.
+                # Curve fitting.
                 order = min(i - 1, 3)
 
                 z = scipy.polyfit(x, y, order)
@@ -65,7 +65,7 @@ class FlashSep(component.Component):
                 alter = scipy.optimize.newton(p,alter)
 
             else:
-                #manual guess
+                # Manual guess
                 alter = alter + delta
 
             n2y = n2['y'] + alter*(n2['mdot']/n1['mdot'])
@@ -77,7 +77,7 @@ class FlashSep(component.Component):
 
             i = i + 1
 
-        #correct the mass fraction based on total mass flow:
+        # Correct the mass fraction based on total mass flow
         n2['y'] = n2['y'] + alter*(n2['mdot']/n1['mdot'])
 
         states.state(n2)

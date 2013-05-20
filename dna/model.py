@@ -37,7 +37,7 @@ class DnaModel:
 
     def export(self, filename):
 
-        #print to csv file
+        # Print to csv file
         with open('../output/'+filename+'.csv','w',newline='',encoding='utf-8') as csvfile:
             print('Exporting results to csv file...')
             fieldnames = ['Node','from','to','media','y','mdot','cp','t','p','h','q','s','e']
@@ -48,7 +48,7 @@ class DnaModel:
             for i in sorted(self.nodes.keys(),key=float):
                 item = self.nodes[i]
 
-                #supercritical
+                # Supercritical
                 if 'q' in item and is_number(item['q']) and (item['q'] > 1.000 or item['q'] < 0.000):
                     item['q'] = '-'
 
@@ -81,18 +81,18 @@ class IterateModel:
         This runs an iteration to make a specific value in the model match a condition
         '''
 
-        #FIXME: Running an iteration with False as initial guess is troublesome
+        # FIXME: Running an iteration with False as initial guess is troublesome
 
         print('Starting iteration for full model')
 
-        #global iterate vars
+        # Global iterate vars
         i = 0
         maxDelta = 1
 
         if oldResult is not False:
             model = oldResult
         else:
-            #get initial state:
+            # Get initial state:
             print('Getting initial state')
             model = self.model(self.cond).init().run()
 
@@ -101,7 +101,7 @@ class IterateModel:
         print('Analysing initial residuals')
         res = model.residuals()
 
-        #prepare iterator helpers
+        # Prepare iterator helpers
         iterate = []
         tol = 0.001
 
@@ -129,7 +129,7 @@ class IterateModel:
         while abs(maxDelta) > tol and i < 20:
 
             print('Updating conditions based on residuals...')
-            #loop over all residuals
+            # Loop over all residuals
             for res_index, currRes in enumerate(res):
 
                 currIter = iterate[res_index]
@@ -143,12 +143,12 @@ class IterateModel:
                     print('y = ', currIter.y)
                     print('delta = ', currIter.delta)
 
-                    #get new guess:
+                    # Get new guess:
                     self.cond[currRes['cond']] = currIter.optimize(currRes['alter'])
 
-                    #from here on self.cond[currRes['cond']] is guaranteed available, so use it
+                    # From here on self.cond[currRes['cond']] is guaranteed available, so use it
 
-                    #apply range
+                    # Apply range
                     orig = self.cond[currRes['cond']]
                     self.cond[currRes['cond']] = max(currRes['range'][0], self.cond[currRes['cond']])
                     self.cond[currRes['cond']] = min(currRes['range'][1], self.cond[currRes['cond']])
@@ -156,7 +156,7 @@ class IterateModel:
                     if self.cond[currRes['cond']] != orig:
                         self.cond[currRes['cond']] = currRes['alter'] + currIter.delta
 
-                        #make sure this does not also fall out of range
+                        # Make sure this does not also fall out of range
 
                         self.cond[currRes['cond']] = max(currRes['range'][0], self.cond[currRes['cond']])
                         self.cond[currRes['cond']] = min(currRes['range'][1], self.cond[currRes['cond']])
@@ -167,13 +167,13 @@ class IterateModel:
 
             i = i + 1
 
-            #init the model (overwrite existing)
+            # Init the model (overwrite existing)
             model = self.model(self.cond).init()
 
             print('Done. Re-running model...')
 
             try:
-                #run the model
+                # Run the model
                 model.run()
             except refprop.RefpropError as e:
                 print(e)
@@ -187,25 +187,25 @@ class IterateModel:
 
                 for res_index, currRes in enumerate(res):
                     currIter = iterate[res_index]
-                    #update looping parameters
+                    # Update looping parameters
 
                     oldDelta = currIter.delta
                     currIter.delta = currRes['value'] - currRes['alter']
 
                     if abs(currIter.delta) > abs(maxDelta):
-                        maxDelta = currIter.delta #maxDelta is for controlling the while loop
+                        maxDelta = currIter.delta # maxDelta is for controlling the while loop
 
                     if abs(currIter.delta) < tol:
-                        #clear iteratorHelper when reaching desired tolerance
+                        # Clear iteratorHelper when reaching desired tolerance
                         currIter.x = []
                         currIter.y = []
 
                     if currIter.delta != 0:
-                        #be sure to not store exact matches, they break optimize()
+                        # Be sure to not store exact matches, they break optimize()
                         currIter.x.append(self.cond[currRes['cond']])
                         currIter.y.append(currIter.delta)
 
-            #export temporary results after each iteration
+            # Export temporary results after each iteration
             model.export('tmp' + str(i))
             self.lastRun = model
 

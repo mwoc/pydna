@@ -15,8 +15,8 @@ class IterateParamHelper:
         tol = 0.01
 
         if manual is True and abs(self.delta) > 0.5 and len(self.x) <= 3:
-            #pre-seed x/y as long as delta is large. This should make
-            #the actual iteration later on quicker
+            # Pre-seed x/y as long as delta is large. This should make
+            # the actual iteration later on quicker
             print('manual')
             newVal = currVal + 0.5 * self.delta
 
@@ -63,15 +63,15 @@ class IterateParamHelper:
                     else:
                         delta = 0
 
-                    #find zero
+                    # Find zero
                     newVal = scipy.optimize.newton(p,currVal)
 
                 print('order: ', order)
                 print('delta: ', delta)
 
                 if order > 3:
-                    #anything higher than 2nd order is problematic, we want
-                    #at most cubic interpolation. Cut out the largest deviation
+                    # Anything higher than 2nd order is problematic, we want
+                    # at most cubic interpolation. Cut out the largest deviation
                     print('popping tags')
                     print(self.y)
 
@@ -90,7 +90,7 @@ class IterateParamHelper:
                     self.y.pop(i)
                     self.lastPop = i
 
-                #try again
+                # Try again
                 order = 0
                 delta = 1
                 while abs(delta) > tol and order < len(self.x):
@@ -105,19 +105,19 @@ class IterateParamHelper:
                     else:
                         delta = 0
 
-                    #find zero
+                    # Find zero
                     newVal = scipy.optimize.newton(p,currVal)
 
             except RuntimeError as e:
 
-                #went an order too high
+                # Went an order too high
                 z = np.polyfit(self.x, self.y, order - 1, full=True)
                 p = np.poly1d(z[0])
 
                 newVal = scipy.optimize.newton(p,currVal)
         else:
             if currVal < 1:
-                #be extra careful for low values
+                # Be extra careful for low values
                 newVal = currVal + 0.25 * self.delta
             else:
                 newVal = currVal + 0.5 * self.delta

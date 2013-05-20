@@ -1,7 +1,7 @@
 import components as comp
 import model
 
-#for plotting:
+# For plotting:
 from numpy import linspace
 import matplotlib.pyplot as plt
 
@@ -10,14 +10,14 @@ def round_down(num, divisor):
 def round_up(num, divisor):
     return num + (num%divisor)
 
-#actual test:
+# Actual test:
 class StorageTest(model.DnaModel):
     def run(self):
         heatex = self.addComponent(comp.PinchHex, 'heatex').nodes(1, 2, 3, 4)
 
         self.nodes[1].update({
             'media': 'kalina',
-            'y': 0.6,
+            'y': 0.7,
             'mdot': 1,
             't': 450,
             'p': 100
@@ -26,14 +26,14 @@ class StorageTest(model.DnaModel):
 
         self.nodes[3].update({
             'media': 'other',
-            'cp': 1.5617, #kJ/kg*K
+            'cp': 1.5617, # kJ/kg*K
             't': 180,
             'p': 1,
             'mdot': 2
         })
 
 
-        heatex.calc(Nseg = 11, dTmin = 20)
+        heatex.calc(Nseg = 11, dTmin = 5)
 
         return self
 
@@ -41,7 +41,10 @@ class StorageTest(model.DnaModel):
         print('Plotting...')
 
         result = self.result['heatex']
-        #plot
+
+        _title = '{0} - Pinch: {1:.2f}, eff: {2:.2%}, Q: {3:.2f} [kW]'.format('heatex'.capitalize(), result['dTmin'], result['eff'], result['Q'])
+
+        # Plot
         x = linspace(0, 1, len(result['Th']))
         miny = round_down(min(min(result['Tc']), min(result['Th']))-1, 10)
         maxy = round_up(max(max(result['Tc']), max(result['Th']))+1, 10)
@@ -49,7 +52,7 @@ class StorageTest(model.DnaModel):
         plt.plot(x, result['Tc'], 'b-<', label = 'Cold')
         plt.xlabel('Location in HEX')
         plt.ylabel(r'Temperature [$^\circ$C]')
-        plt.title('Hot/cold flows through HEX - pinch: ' + str(round(result['dTmin'], 2)) + ' [K]')
+        plt.title(_title)
         plt.ylim(miny, maxy)
         plt.grid(True)
         plt.savefig('../output/storageTest.png')

@@ -11,24 +11,24 @@ sys.path.append(_filename)
 #from test_Flashsep import FlashSepTest
 #FlashSepTest({}).run().analyse()
 
-#turbine
+# Turbine
 #from test_Turbine import TurbineTest
 #TurbineTest({}).run().analyse()
 
-#heatex
+# Heatex
 #from test_Heatex import HeatexTest
 #hx = HeatexTest({}).run().analyse().plot()
 
-#storage
-#from test_Storage import StorageTest
-#hx = StorageTest({}).run().analyse().plot()
+# Storage
+from test_Storage import StorageTest
+hx = StorageTest({}).run().analyse().plot()
 
-#from test_Discharge import DischargeTest
-#hx = DischargeTest({}).run().analyse().plot()
+from test_Discharge import DischargeTest
+hx = DischargeTest({}).run().analyse().plot()
 
-from test_Condenser import CondenserTest
-hx = CondenserTest({}).run().analyse().plot()
+#from test_Condenser import CondenserTest
+#hx = CondenserTest({}).run().analyse().plot()
 
-#receiver
+# Receiver
 #from test_Receiver import ReceiverTest
 #hx = ReceiverTest({}).run().analyse()

@@ -112,7 +112,7 @@ def fromRefprop(prop):
     if 'mdot' in prop:
         node['mdot'] = prop['mdot']
 
-    #convert mol to kg, K to C, kPa to hPa
+    # Convert mol to kg, K to C, kPa to hPa
     if 'p' in prop:
         node['p'] = prop['p']/100 # kPa > hPa
 
@@ -138,16 +138,16 @@ def fromRefprop(prop):
         node['cp'] = prop['cp']/molWmix # J/mol*K > kJ/kg*K
 
     if 'q' in prop:
-        node['q'] = molarToMass(prop['q'])[0] #mol/mol > kg/kg
+        node['q'] = molarToMass(prop['q'])[0] # mol/mol > kg/kg
 
     if 'x' in prop:
-        node['y'] = molarToMass(prop['x'][0])[0] #mol/mol > kg/kg
+        node['y'] = molarToMass(prop['x'][0])[0] # mol/mol > kg/kg
 
     if 'xvap' in prop:
-        node['yvap'] = molarToMass(prop['xvap'][0])[0] #mol/mol > kg/kg
+        node['yvap'] = molarToMass(prop['xvap'][0])[0] # mol/mol > kg/kg
 
     if 'xliq' in prop:
-        node['yliq'] = molarToMass(prop['xliq'][0])[0] #mol/mol > kg/kg
+        node['yliq'] = molarToMass(prop['xliq'][0])[0] # mol/mol > kg/kg
 
     return node
 
@@ -160,10 +160,10 @@ def refpropState(node):
     in1 = 0
     in2 = 0
 
-    #convert input to refprop notation:
+    # Convert input to refprop notation:
     _node = toRefprop(node)
 
-    #figure out which inputs to use (sorted by priority)
+    # Figure out which inputs to use (sorted by priority)
     if 'p' in _node and 'h' in _node:
         mode = 'ph'
         in1 = _node['p']
@@ -192,17 +192,17 @@ def refpropState(node):
         raise InputError('state','Missing inputs for: '.str(_node))
 
     try:
-        #calculate
+        # Calculate
         prop = rp.flsh(mode, in1, in2, _node['x'])
     except rp.RefpropError as e:
-        #normal flsh failed, try flsh2 as well
+        # Normal flsh failed, try flsh2 as well
         try:
             if mode is 'ph':
-                #assume something in the 2-phase region. temperature changes very little with enthalpy
+                # Assume something in the 2-phase region. temperature changes very little with enthalpy
                 x = _node['x']
                 molWmix = float(x[0]) * float(molWNH3) + float(x[1]) * float(molWH2O)
-                propl = rp.flsh('ph', in1, in2 - 5*molWmix, _node['x'])
-                propr = rp.flsh('ph', in1, in2 + 5*molWmix, _node['x'])
+                propl = rp.flsh('ph', in1, in2 - 10*molWmix, _node['x'])
+                propr = rp.flsh('ph', in1, in2 + 10*molWmix, _node['x'])
                 t = (propl['t'] + propr['t']) / 2
 
                 prop = rp.flsh('tp', t, in1, _node['x'])
@@ -210,7 +210,7 @@ def refpropState(node):
             print(node)
             raise(e)
 
-    #convert back from refprop notation, then update node
+    # Convert back from refprop notation, then update node
     node.update(fromRefprop(prop))
 
     return node
@@ -224,7 +224,7 @@ def cpBasedState(node):
     Reference point is: h = 0 at t=273
     '''
 
-    #make sure object has often-requested properties defined
+    # Make sure object has often-requested properties defined
     if not 'p' in node:
         node['p'] = 0
 
@@ -234,7 +234,7 @@ def cpBasedState(node):
     if not 'y' in node:
         node['y'] = 0
 
-    #calculation
+    # Calculation
     if 'h' in node:
         node['t'] = node['h'] / node['cp']
 

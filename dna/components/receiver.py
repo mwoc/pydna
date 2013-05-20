@@ -40,19 +40,19 @@ class Receiver(Component):
             n2['mdot'] = n1['mdot']
 
         if not 'mdot' in n1:
-            #n1[t] and n2[t] have to be known
+            # n1[t] and n2[t] have to be known
             n1['mdot'] = Qin / (n2['h'] - n1['h'])
             n2['mdot'] = n1['mdot']
         elif not 't' in n1:
-            #n2[t] and mdot have to be known
+            # n2[t] and mdot have to be known
             n1['h'] = n2['h'] - Qin / n1['mdot']
             state(n1)
         elif not 't' in n2:
-            #n1[t] and mdot have to be known
+            # n1[t] and mdot have to be known
             n2['h'] = n1['h'] + Qin / n1['mdot']
             state(n2)
         else:
-            #those are known. Find Qin?
+            # Those are known. Find Qin?
             Qin = (n2['h'] - n1['h']) * n1['mdot']
             print('Q_in:', Qin, 'kJ/s')
 

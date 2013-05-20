@@ -5,7 +5,6 @@ class Component:
 
         self.inlets = []
         self.outlets = []
-        #self.params = {}
 
     def ensureNodeExists(self,index):
         if not index in self.model.nodes:
@@ -29,7 +28,7 @@ class Component:
         self.model.result[self.name] = data
 
     def getNodes(self):
-        #inlet nodes:
+        # Inlet nodes:
         nodes = {}
         nodes['i'] = [self.model.nodes[k] for k in self.inlets]
         nodes['o'] = [self.model.nodes[k] for k in self.outlets]

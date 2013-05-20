@@ -26,11 +26,11 @@ class Pump(component.Component):
         if 'media' in n1:
             n2['media'] = n1['media']
 
-        #isentropic for now:
+        # Isentropic for now:
         n2['s'] = n1['s']
 
-        #density kg/m3 to specific volume m3/kg:
-        #n2['h'] = n1['h'] - (1/prop1['D'])*(n1['p']*100 - n2['p']*100)
+        # Density kg/m3 to specific volume m3/kg:
+        # n2['h'] = n1['h'] - (1/prop1['D'])*(n1['p']*100 - n2['p']*100)
         states.state(n2)
 
         return self

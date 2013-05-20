@@ -49,7 +49,7 @@ class Mixer(Component):
 
         n3['p'] = n2['p'] = n1['p']
 
-        #mass balance
+        # Mass balance
         if not 'mdot' in n3:
             n3['mdot'] = n1['mdot'] + n2['mdot']
         elif not 'mdot' in n2:
@@ -61,14 +61,14 @@ class Mixer(Component):
                 raise InputError('mixer','mass flow rates do not match')
 
         if n3['mdot'] == 0:
-            #though an mdot of 0 is not useful, don't let that ruin the simulation
+            # Though an mdot of 0 is not useful, don't let that ruin the simulation
             n3['y'] = (n1['y'] +n2['y']) / 2
             n3['h'] = (n1['h'] +n2['h']) / 2
         else:
-            #mass fraction balance
+            # Mass fraction balance
             n3['y'] = (n1['mdot']*n1['y'] + n2['mdot']*n2['y'] )/n3['mdot']
 
-            #enthalpy balance
+            # Enthalpy balance
             n3['h'] = (n1['mdot']*n1['h'] + n2['mdot']*n2['h'] )/n3['mdot']
 
         states.state(n3)
@@ -158,7 +158,7 @@ class DoubleSplitMix(Component):
         n3 = n['o'][0]
         n4 = n['o'][1]
 
-        #find inlet node with lowest nh3 mass fraction
+        # Find inlet node with lowest nh3 mass fraction
         if n1['y'] < n2['y']:
             ni_rich = n2
             ni_lean = n1
@@ -166,7 +166,7 @@ class DoubleSplitMix(Component):
             ni_rich = n1
             ni_lean = n2
 
-        #find outlet node with lowest nh3 mass fraction
+        # Find outlet node with lowest nh3 mass fraction
         if n3['y'] < n4['y']:
             no_rich = n4
             no_lean = n3
@@ -177,26 +177,22 @@ class DoubleSplitMix(Component):
         i = 0
         tol = 0.01
 
-        #iterate mass fraction left. Start with 50/50 split
-        #yinit = (ni_lean['y'] * 0.5*ni_lean['mdot'] + ni_rich['y'] * 0.5*ni_rich['mdot']) / no_lean['mdot']
+        # Iterate mass fraction left. Start with 50/50 split
 
-        delta = 1#no_lean['y'] - yinit
+
+        delta = 1 # no_lean['y'] - yinit
         x = []
         y = []
-        #ratio = 0.5
-
-
-        #print(delta)
 
         while abs(delta) > tol and i < 10:
-            #try finding solution on the lean side
+            # Try finding solution on the lean side
             ni_lean_a = ni_lean.copy()
             ni_rich_a = ni_rich.copy()
 
-            #guess better mdot for lean_a/rich_a
+            # Guess better mdot for lean_a/rich_a
 
             if len(x) > 1:
-                #curve fitting.
+                # Curve fitting.
                 order = min(len(x) - 1, 3)
 
                 z = scipy.polyfit(x, y, order)
@@ -205,7 +201,7 @@ class DoubleSplitMix(Component):
                 ratio = scipy.optimize.newton(p,ratio)
 
             elif len(x) == 1:
-                #manual guess
+                # Manual guess
                 ratio = no_lean['mdot'] / (ni_lean['mdot'] + ni_rich['mdot'])
             else:
                 ratio = 0.5
@@ -218,7 +214,7 @@ class DoubleSplitMix(Component):
             ni_rich_a['mdot'] = no_lean['mdot'] - ni_lean_a['mdot']
 
             if ni_rich_a['mdot'] > ni_rich['mdot']:
-                #dont exceed max
+                # Don't exceed max
                 ni_rich_a['mdot'] = ni_rich['mdot']
                 ni_lean_a['mdot'] = no_lean['mdot'] - ni_rich_a['mdot']
                 ratio = ni_lean_a['mdot'] / ni_lean['mdot']
@@ -236,41 +232,30 @@ class DoubleSplitMix(Component):
             x.append(ratio)
             y.append(delta)
 
-            #print('x = ', x)
-            #print('y = ', y)
-
-        #found split ratio, solve splitters and mixers
+        # Found split ratio, solve splitters and mixers
 
         ni_lean_a = ni_lean.copy()
         ni_lean_b = ni_lean.copy()
         ni_rich_a = ni_rich.copy()
         ni_rich_b = ni_rich.copy()
 
-        #splitter for lean:
+        # Splitter for lean:
         ni_lean_a['mdot'] = ni_lean['mdot'] * ratio
         ni_lean_b['mdot'] = ni_lean['mdot'] - ni_lean_a['mdot']
 
-        #splitter for rich:
+        # Splitter for rich:
         ni_rich_a['mdot'] = no_lean['mdot'] - ni_lean_a['mdot']
         ni_rich_b['mdot'] = ni_rich['mdot'] - ni_rich_a['mdot']
 
-        #print('no_lean = ', no_lean)
-        #print('no_rich = ', no_rich)
-        #print('ni_lean_a = ', ni_lean_a)
-        #print('ni_lean_b = ', ni_lean_b)
-        #print('ni_rich_a = ', ni_rich_a)
-        #print('ni_rich_b = ', ni_rich_b)
-
-
-        #mass fraction / enthalpy balance for lean:
+        # Mass fraction / enthalpy balance for lean:
         no_lean['y'] = (ni_lean_a['mdot']*ni_lean_a['y'] + ni_rich_a['mdot']*ni_rich_a['y'] )/no_lean['mdot']
         no_lean['h'] = (ni_lean_a['mdot']*ni_lean_a['h'] + ni_rich_a['mdot']*ni_rich_a['h'] )/no_lean['mdot']
 
-        #mass fraction / enthalpy balance for rich:
+        # Mass fraction / enthalpy balance for rich:
         no_rich['y'] = (ni_lean_b['mdot']*ni_lean_b['y'] + ni_rich_b['mdot']*ni_rich_b['y'] )/no_rich['mdot']
         no_rich['h'] = (ni_lean_b['mdot']*ni_lean_b['h'] + ni_rich_b['mdot']*ni_rich_b['h'] )/no_rich['mdot']
 
-        #get states:
+        # Get states:
         states.state(no_lean)
         states.state(no_rich)
 
@@ -296,14 +281,14 @@ class DoubleSplitMix(Component):
 
         n4['p'] = n3['p'] = n2['p'] = n1['p']
 
-        #be sure to have full information of inputs:
+        # Be sure to have full information of inputs:
         states.state(n1)
         states.state(n2)
 
-        self.checkBounds(n1, n2, n3) #make sure n3['y'] is in bounds
-        self.checkBounds(n1, n2, n4) #make sure n4['y'] is in bounds
+        self.checkBounds(n1, n2, n3) # Make sure n3['y'] is in bounds
+        self.checkBounds(n1, n2, n4) # Make sure n4['y'] is in bounds
 
-        #simulate splitters and mixers inline
+        # Simulate splitters and mixers inline
         self.iterate()
 
         return self

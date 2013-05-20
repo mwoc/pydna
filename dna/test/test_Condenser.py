@@ -1,7 +1,7 @@
 import components as comp
 import model
 
-#for plotting:
+# For plotting:
 from numpy import linspace
 import matplotlib.pyplot as plt
 
@@ -10,7 +10,7 @@ def round_down(num, divisor):
 def round_up(num, divisor):
     return num + (num%divisor)
 
-#actual test:
+# Actual test:
 class CondenserTest(model.DnaModel):
     def run(self):
         heatex = self.addComponent(comp.PinchHex, 'heatex').nodes(1, 2, 3, 4)
@@ -41,8 +41,11 @@ class CondenserTest(model.DnaModel):
 
         result = self.result['heatex']
 
+        _title = '{0} - Pinch: {1:.2f}, eff: {2:.2%}, Q: {3:.2f} [kW]'.format('heatex'.capitalize(), result['dTmin'], result['eff'], result['Q'])
+
         print(result)
-        #plot
+
+        # Plot
         x = linspace(0, 1, len(result['Th']))
         miny = round_down(min(min(result['Tc']), min(result['Th']))-1, 10)
         maxy = round_up(max(max(result['Tc']), max(result['Th']))+1, 10)
@@ -50,7 +53,7 @@ class CondenserTest(model.DnaModel):
         plt.plot(x, result['Tc'], 'b-<', label = 'Cold')
         plt.xlabel('Location in HEX')
         plt.ylabel(r'Temperature [$^\circ$C]')
-        plt.title('Hot/cold flows through HEX - pinch: ' + str(round(result['dTmin'], 2)) + ' [K]')
+        plt.title(_title)
         plt.ylim(miny, maxy)
         plt.grid(True)
         plt.savefig('../output/condenserTest.png')

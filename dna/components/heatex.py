@@ -47,11 +47,11 @@ class PinchCalc:
             'y': n3['y'],
             'cp': n3['cp'],
             'p': n3['p'],
-            'h': n4['h'] #note n4 usage
+            'h': n4['h'] # Note n4 usage
         }
 
         for i in range(self.Nseg+1):
-            #be explicit about the copying
+            # Be explicit about the copying
             n2_ = n1_2.copy()
             n3_ = n3_4.copy()
 
@@ -68,7 +68,21 @@ class PinchCalc:
                 pinch_pos = i
                 dT_pinch = T2_ - T3_
 
-        return {'dTmin':dT_pinch, 'Th':Th, 'Tc':Tc, 'percent':pinch_pos / self.Nseg}
+        # Get effectiveness from NTU method
+
+        Q_max_cold = n3['mdot'] * (n1['h'] - n3['h'])
+        Q_max_hot = n1['mdot'] * (n1['h'] - n3['h'])
+        Q_max = min(abs(Q_max_cold), abs(Q_max_hot))
+
+        Q = n1['mdot'] * (n1['h'] - n2['h'])
+
+        print(Q_max_cold)
+        print(Q_max_hot)
+        print(Q)
+
+        eff = Q / Q_max
+
+        return {'dTmin':dT_pinch, 'Th':Th, 'Tc':Tc, 'percent': pinch_pos / self.Nseg, 'eff': eff, 'Q': Q}
 
     def iterate(self, side=1):
         '''
@@ -79,10 +93,10 @@ class PinchCalc:
         '''
         dTmin = self.dTmin
 
-        #try pinch at cold side (cold in, hot out)
+        # Try pinch at cold side (cold in, hot out)
 
 
-        #iteration params
+        # Iteration params
         tol = 0.1
         delta = 1
         convergence = 1
@@ -100,7 +114,8 @@ class PinchCalc:
         find_mdot = False
         find_mdot1 = False
         find_mdot3 = False
-        # if enough info is known about the heat transfer, we can deduct an mdot
+
+        # If enough info is known about the heat transfer, we can deduct an mdot
         if not 'mdot' in self.n1:
             find_mdot = find_mdot1 = True
             #
@@ -108,17 +123,17 @@ class PinchCalc:
             find_mdot = find_mdot3 = True
             #
 
-        #tolerance of 0.01 K is close enough
-        #do NOT alter convergence rate parameter. Too high value breaks design
+        # Tolerance of 0.01 K is close enough
+        # do NOT alter convergence rate parameter. Too high value breaks design
         while abs(delta) > tol and abs(convergence) > 0.0005 and  i < 20:
-            #make local copies of input
+            # Make local copies of input
             _n1 = self.n1.copy()
             _n2 = self.n2.copy()
             _n3 = self.n3.copy()
             _n4 = self.n4.copy()
 
             if _n1['mdot'] <= 0 or _n3['mdot'] <= 0:
-                #no iteration possible, early return
+                # No iteration possible, early return
                 result['pinch'] = self.check(_n1, _n2, _n3, _n4)
                 return result['pinch']
 
@@ -130,51 +145,51 @@ class PinchCalc:
                 dT_left = currIter.optimize(dT_left, manual=False)
 
             if len(currIter.x) == 1:
-                #for fast iteration, be sure to swing far from 0 on both sides
+                # For fast iteration, be sure to swing far from 0 on both sides
                 print(dT_left, delta)
                 dT_left = dT_left + delta
 
             if side == 1:
-                #side 1 is hot side, 1 and 4
+                # Side 1 is hot side, 1 and 4
                 _n4['t'] = _n1['t'] - dT_left
                 states.state(_n4)
 
                 _n2['h'] = (_n1['h'] * _n1['mdot'] - (_n3['mdot'] * (_n4['h'] - _n3['h']))) / _n1['mdot']
                 states.state(_n2)
 
-                #update looping parameters
+                # Update looping parameters
                 delta = _n2['t'] - (_n3['t'] + dTmin)
             else:
-                #side 2 is cold side, 2 and 3
+                # Side 2 is cold side, 2 and 3
                 _n2['t'] = _n3['t'] + dT_left
                 states.state(_n2)
 
                 _n4['h'] = (_n3['h'] * _n3['mdot'] + (_n1['mdot'] * (_n1['h'] - _n2['h']))) / _n3['mdot']
                 states.state(_n4)
 
-                #update looping parameters
+                # Update looping parameters
                 delta = _n1['t'] - (_n4['t'] + dTmin)
 
-            #currIter.delta = delta
+            # currIter.delta = delta # commented out to prevent IterateParamHelper from guessing
             currIter.x.append(dT_left)
             currIter.y.append(delta)
 
             i = i + 1
 
-            #only accept positive delta for internal pinch calculation
+            # Only accept positive delta for internal pinch calculation
             if delta >= 0 - tol:
-                #ok at least the pinch at in/outlets is ok. Now check
-                #it internally
+                # At least the pinch at in/outlets is ok. Now check
+                # it internally
                 try:
-                    #check internal pinch too
+                    # Check internal pinch too
                     result['pinch'] = self.check(_n1, _n2, _n3, _n4)
                 except refprop.RefpropError as e:
-                    #ignore me
+                    # Ignore me
                     print(e)
                     print('Next')
                 else:
-                    #calculation succeeded. external delta is not valid anymore,
-                    #store internal delta instead:
+                    # Calculation succeeded. external delta is not valid anymore,
+                    # store internal delta instead:
                     currIter.y.pop()
                     delta = result['pinch']['dTmin'] - dTmin
                     currIter.y.append(delta)
@@ -219,11 +234,9 @@ class PinchHex(component.Component):
         n4 = n['o'][1]
 
 
-        #find states for all known inputs:
-
-        states.state(n1) #hot inlet
-
-        states.state(n3) #cold inlet
+        # Find states for all known inputs:
+        states.state(n1) # Hot inlet
+        states.state(n3) # Cold inlet
 
         n2['p'] = n1['p']
         n2['y'] = n1['y']
@@ -244,7 +257,7 @@ class PinchHex(component.Component):
         calc = False
 
         if 't' in n2 or 'q' in n2:
-            #quality and temperature in hot fluid cannot increase
+            # Quality and temperature in hot fluid cannot increase
             if 'q' in n2 and n2['q'] >= n1['q']:
                 del n2['q']
                 n2['t'] = n1['t']
@@ -252,10 +265,10 @@ class PinchHex(component.Component):
             if 't' in n2 and n2['t'] >= n1['t']:
                 n2['t'] = n1['t']
 
-            states.state(n2) #hot outlet
+            states.state(n2) # Hot outlet
 
         if 't' in n4 or 'q' in n4:
-            #quality and temperature in cold fluid cannot decrease
+            # Quality and temperature in cold fluid cannot decrease
             if 'q' in n4 and n4['q'] <= n3['q']:
                 del n4['q']
                 n4['t'] = n3['t']
@@ -263,32 +276,32 @@ class PinchHex(component.Component):
             if 't' in n4 and n4['t'] <= n3['t']:
                 n4['t'] = n3['t']
 
-            states.state(n4) #cold outlet
+            states.state(n4) # Cold outlet
 
-        #initiate pincher for later use
+        # Initiate pincher for later use
         pincher = PinchCalc(n1, n2, n3, n4, Nseg, dTmin)
 
-        #find any unknown inputs:
+        # Find any unknown inputs:
         if not 't' in n2 and not 't' in n4:
-            #find pinch by iteration, for given mass flow rates and inlet temperatures
+            # Find pinch by iteration, for given mass flow rates and inlet temperatures
             calc = True
 
             if n1['mdot'] <= 0 or n3['mdot'] <= 0:
-                #no heat exchange at all
+                # No heat exchange at all
                 n2['t'] = n1['t']
                 states.state(n2)
 
                 n4['t'] = n3['t']
                 states.state(n4)
             else:
-                #first try one side of the HEX
+                # First try one side of the HEX
                 try:
                     pinch = pincher.iterate(side=1)
                 except refprop.RefpropError as e:
                     print('First side failed, trying second. Reason:')
                     print(e)
 
-                    #if that failed, try from the other
+                    # If that failed, try from the other
                     try:
                         pinch = pincher.iterate(side=2)
                     except refprop.RefpropError as e:
@@ -304,19 +317,19 @@ class PinchHex(component.Component):
                         raise Exception(e)
 
         elif not 't' in n4 and not 'q' in n4:
-            #calculate T4 for given mass flow rates and other temperatures
+            # Calculate T4 for given mass flow rates and other temperatures
             calc = True
             n4['h'] = (n3['h'] * n3['mdot'] + (n1['mdot'] * (n1['h'] - n2['h']))) / n3['mdot']
             states.state(n4)
 
         elif not 't' in n2 and not 'q' in n2:
-            #calculate T2 for given mass flow rates and other temperatures
+            # Calculate T2 for given mass flow rates and other temperatures
             calc = True
             n2['h'] = (n1['h'] * n1['mdot'] - (n3['mdot'] * (n4['h'] - n3['h']))) / n1['mdot']
             states.state(n2)
 
         if not 'mdot' in n3:
-            #calculate m3 for given m1 or Q, and given temperatures
+            # Calculate m3 for given m1 or Q, and given temperatures
             calc = True
             if not 'mdot' in n1:
                 n1['mdot'] = Q / (n1['h'] - n2['h'])
@@ -324,7 +337,7 @@ class PinchHex(component.Component):
             n3['mdot'] = ((n1['h'] - n2['h']) * n1['mdot']) / (n4['h'] - n3['h'])
 
         elif not 'mdot' in n1:
-            #calculate m1 for given m3 or Q, and given temperatures
+            # Calculate m1 for given m3 or Q, and given temperatures
             calc = True
 
             if not 'mdot' in n3:
@@ -338,7 +351,7 @@ class PinchHex(component.Component):
         n2['mdot'] = n1['mdot']
         n4['mdot'] = n3['mdot']
 
-        #find the pinch point
+        # Find the pinch point
         pinch = pincher.check(n1, n2, n3, n4)
 
         self.storeResult(pinch)
@@ -367,7 +380,7 @@ class Condenser(component.Component):
         n2['y'] = n1['y']
         n2['mdot'] = n1['mdot']
 
-        #if it is subcooled liquid entering the condenser, pass it through unamended
+        # If it is subcooled liquid entering the condenser, pass it through unamended
         Tsat = states.state({'p': n1['p'], 'y': n1['y'], 'q': 0})['t']
         if Tsat > n1['t']:
             n2['t'] = n1['t']
