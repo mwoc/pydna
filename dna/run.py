@@ -37,6 +37,7 @@ cond['pinch_con'] = 4
 cond['pinch_stor'] = 20
 
 cond['Nseg'] = 5
+cond['Nseg_con'] = 1
 
 #simulation guesses (iterate!!):
 cond['molefrac_tur'] = 0.5
@@ -54,11 +55,16 @@ cond['t_node18.1'] = 80
 cond['t_node47.1'] = 80
 
 #pass initial conditions to model and run/iterate it
-model = IterateModel(m1_r_t.MyModel, cond).run()
+try:
+    runner = IterateModel(m1_r_t.MyModel, cond)
+    model = runner.run()
+except KeyboardInterrupt:
+    #if it takes too long, we can also just return the last iteration
+    model = runner.lastRun
+finally:
+    eff = model.result['eff']
 
-eff = model.result['eff']
-
-model.export('result')
+    model.export('result')
 
 print('Plotting...')
 com = model.result

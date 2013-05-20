@@ -74,6 +74,7 @@ class IterateModel:
     def __init__(self, model, cond):
         self.model = model
         self.cond = cond
+        self.lastRun = model
 
     def run(self, oldResult = False):
         '''
@@ -97,7 +98,7 @@ class IterateModel:
 
             model.export('tmp0')
 
-        print('Analyzing initial residuals')
+        print('Analysing initial residuals')
         res = model.residuals()
 
         #prepare iterator helpers
@@ -206,6 +207,7 @@ class IterateModel:
 
             #export temporary results after each iteration
             model.export('tmp' + str(i))
+            self.lastRun = model
 
         print('Finished iteration')
 

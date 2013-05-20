@@ -26,7 +26,7 @@ class MyModel(model.DnaModel):
 
         self.addComponent(com.Mixer, 'mixer1').nodes(7, 29, 8)
 
-        self.addComponent(com.Condenser, 'lpcon').nodes(8, 9)
+        self.addComponent(com.PinchHex, 'lpcon').nodes(8, 9, 63, 64)
 
         self.addComponent(com.Pump, 'lppump').nodes(9, 10)
 
@@ -38,7 +38,7 @@ class MyModel(model.DnaModel):
 
         self.addComponent(com.PinchHex, 'recup2r').nodes(13, '13.5', '15.1', 16)
 
-        self.addComponent(com.Condenser, 'hpconr').nodes('13.5', 14)
+        self.addComponent(com.PinchHex, 'hpconr').nodes('13.5', 14, 66, 67)
 
         self.addComponent(com.Pump, 'hppumpr').nodes(14, 15)
 
@@ -48,7 +48,7 @@ class MyModel(model.DnaModel):
 
         self.addComponent(com.PinchHex, 'recup2s').nodes(41, 42, '44.1', 45)
 
-        self.addComponent(com.Condenser, 'hpcons').nodes(42, 43)
+        self.addComponent(com.PinchHex, 'hpcons').nodes(42, 43, 69, 70)
 
         self.addComponent(com.Pump, 'hppumps').nodes(43, 44)
 
@@ -228,7 +228,17 @@ class MyModel(model.DnaModel):
 
         components['mixer1'].calc()
 
-        components['lpcon'].calc()
+        self.nodes[63].update({
+            'media': 'water',
+            'y': 0,
+            'p': 2,
+            't': cond['t_con']
+        })
+
+        self.nodes[64]['t'] = cond['t_con'] + cond['dT_con']
+
+        self.nodes[9]['q'] = 0
+        components['lpcon'].calc(cond['Nseg_con'], cond['pinch_con'])
 
         self.nodes[10]['p'] = p_me   #have to tell pump how far to increase pressure
         components['lppump'].calc()
@@ -267,7 +277,17 @@ class MyModel(model.DnaModel):
         self.nodes[16]['t'] = self.nodes[13]['t'] - cond['pinch_hex'] #fixed guess
         components['recup2r'].calc(cond['Nseg'], cond['pinch_hex'])
 
-        components['hpconr'].calc()
+        self.nodes[66].update({
+            'media': 'water',
+            'y': 0,
+            'p': 2,
+            't': cond['t_con']
+        })
+
+        self.nodes[67]['t'] = cond['t_con'] + cond['dT_con']
+
+        self.nodes[14]['q'] = 0
+        components['hpconr'].calc(cond['Nseg_con'], cond['pinch_con'])
 
         self.nodes[15]['p'] = self.nodes['15.1']['p']   #have to tell pump how far to increase pressure
         components['hppumpr'].calc()
@@ -291,7 +311,17 @@ class MyModel(model.DnaModel):
         self.nodes[45]['t'] = self.nodes[41]['t'] - cond['pinch_hex'] #fixed guess
         components['recup2s'].calc(cond['Nseg'], cond['pinch_hex'])
 
-        components['hpcons'].calc()
+        self.nodes[69].update({
+            'media': 'water',
+            'y': 0,
+            'p': 2,
+            't': cond['t_con']
+        })
+
+        self.nodes[70]['t'] = cond['t_con'] + cond['dT_con']
+
+        self.nodes[43]['q'] = 0
+        components['hpcons'].calc(cond['Nseg_con'], cond['pinch_con'])
 
         self.nodes[44]['p'] = self.nodes['44.1']['p']   #have to tell pump how far to increase pressure
         components['hppumps'].calc()

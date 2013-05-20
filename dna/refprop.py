@@ -427,6 +427,7 @@ def _fluidextention():
 
 def _prop(**prop):
     global _fixicomp
+    global _fixnc
     prop.update(_setupprop)
 
     #one time hfld correction by icomp
@@ -451,6 +452,9 @@ def _prop(**prop):
     if 'fixicomp' in prop:
         _fixicomp = prop['fixicomp']
         del prop['fixicomp']
+    if 'fixnc' in prop:
+        _fixnc = prop['fixnc']
+        del prop['fixnc']
     if '_fixicomp' in globals():
         if _fixicomp > prop['nc']:
             raise RefpropicompError ('undefined "icomp: ' +
@@ -462,6 +466,8 @@ def _prop(**prop):
             del _fixicomp
         elif 0 < _fixicomp <= prop['nc']:
             prop['purefld'] = [_fixicomp, prop['hfld'][_fixicomp - 1]]
+    if '_fixnc' in globals():
+        prop['nc'] = _fixnc
     if 'ierr' in prop:
         _outputierrcheck(prop['ierr'], prop['herr'], prop['defname'])
         prop.__delitem__('ierr')
@@ -1879,6 +1885,26 @@ def purefld(icomp=0):
         _rp.PUREFLDdll(ctypes.byref(_icomp))
     return _prop(fixicomp = icomp)
 
+def setnc(nc=1):
+    '''Change the standard mixture setup so that the properties of one fluid
+    can be calculated as if SETUP had been called for a pure fluid. Calling
+    this routine will disable all mixture calculations. To reset the mixture
+    setup, call this routine with icomp=0.
+
+    inputs:
+        icomp--fluid number in a mixture to use as a pure fluid'''
+    global _setnc_rec
+
+    #define setup record for def resetup
+    _setnc_rec = _Setuprecord(locals(), '_setnc_rec')
+
+    _inputerrorcheck(locals())
+    _nc.value = nc
+    if platform.system() == 'Linux':
+        _rp.setnc_(ctypes.byref(_nc))
+    elif platform.system() == 'Windows':
+        _rp.SETNCdll(ctypes.byref(_nc))
+    return _prop(fixnc = nc)
 
 def _name(icomp=1):
     _inputerrorcheck(locals())

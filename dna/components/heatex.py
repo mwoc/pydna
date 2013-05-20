@@ -34,7 +34,7 @@ class PinchCalc:
         Th = []
         Tc = []
 
-        n2_ = {
+        n1_2 = {
             'media': n1['media'],
             'y': n1['y'],
             'cp': n1['cp'],
@@ -42,7 +42,7 @@ class PinchCalc:
             'h': n1['h']
         }
 
-        n3_ = {
+        n3_4 = {
             'media': n3['media'],
             'y': n3['y'],
             'cp': n3['cp'],
@@ -51,6 +51,9 @@ class PinchCalc:
         }
 
         for i in range(self.Nseg+1):
+            #be explicit about the copying
+            n2_ = n1_2.copy()
+            n3_ = n3_4.copy()
 
             n2_['h'] = n1['h'] - dH_H*i
             n3_['h'] = n4['h'] - dH_C*i
@@ -240,10 +243,26 @@ class PinchHex(component.Component):
 
         calc = False
 
-        if 't' in n2:
+        if 't' in n2 or 'q' in n2:
+            #quality and temperature in hot fluid cannot increase
+            if 'q' in n2 and n2['q'] >= n1['q']:
+                del n2['q']
+                n2['t'] = n1['t']
+
+            if 't' in n2 and n2['t'] >= n1['t']:
+                n2['t'] = n1['t']
+
             states.state(n2) #hot outlet
 
-        if 't' in n4:
+        if 't' in n4 or 'q' in n4:
+            #quality and temperature in cold fluid cannot decrease
+            if 'q' in n4 and n4['q'] <= n3['q']:
+                del n4['q']
+                n4['t'] = n3['t']
+
+            if 't' in n4 and n4['t'] <= n3['t']:
+                n4['t'] = n3['t']
+
             states.state(n4) #cold outlet
 
         #initiate pincher for later use
@@ -284,13 +303,13 @@ class PinchHex(component.Component):
                         print('Second side iteration also failed.')
                         raise Exception(e)
 
-        elif not 't' in n4:
+        elif not 't' in n4 and not 'q' in n4:
             #calculate T4 for given mass flow rates and other temperatures
             calc = True
             n4['h'] = (n3['h'] * n3['mdot'] + (n1['mdot'] * (n1['h'] - n2['h']))) / n3['mdot']
             states.state(n4)
 
-        elif not 't' in n2:
+        elif not 't' in n2 and not 'q' in n2:
             #calculate T2 for given mass flow rates and other temperatures
             calc = True
             n2['h'] = (n1['h'] * n1['mdot'] - (n3['mdot'] * (n4['h'] - n3['h']))) / n1['mdot']
@@ -353,7 +372,7 @@ class Condenser(component.Component):
         if Tsat > n1['t']:
             n2['t'] = n1['t']
         else:
-            n2['q'] = 0
+            n2['t'] = Tsat
 
         states.state(n2)
 

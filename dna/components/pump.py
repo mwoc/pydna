@@ -16,7 +16,7 @@ class Pump(component.Component):
 
         states.state(n1)
 
-        if n1['q'] > 0:
+        if n1['q'] > 0.001:
             msg = self.name +' - pump inlet has to be saturated or sub-cooled liquid, found %s!' % n1['q']
             warnings.warn(msg, RuntimeWarning)
 

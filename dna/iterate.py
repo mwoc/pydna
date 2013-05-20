@@ -7,6 +7,7 @@ class IterateParamHelper:
         self.x = []
         self.y = []
         self.delta = 1
+        self.lastPop = 0
 
     def optimize(self, currVal, manual = True):
 
@@ -30,7 +31,7 @@ class IterateParamHelper:
                 order = 0
                 delta = 1
 
-                if len(self.x) > 3:
+                if len(self.x) > 5:
                     bmin = min(self.y)
                     bmax = max(self.y)
 
@@ -41,12 +42,13 @@ class IterateParamHelper:
 
                     i = self.y.index(val)
 
-                    if i == len(self.x)-1:
+                    if i == len(self.x)-1 or i is self.lastPop:
                         i = 0
 
                     print('popping number ', i)
                     self.x.pop(i)
                     self.y.pop(i)
+                    self.lastPop = i
 
 
                 while abs(delta) > tol and order < len(self.x):
@@ -80,9 +82,13 @@ class IterateParamHelper:
                     else:
                         i = self.y.index(max_y)
 
+                    if i == len(self.x)-1 or i is self.lastPop:
+                        i = 0
+
                     print('popping number ', i)
                     self.x.pop(i)
                     self.y.pop(i)
+                    self.lastPop = i
 
                 #try again
                 order = 0
