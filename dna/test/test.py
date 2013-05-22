@@ -20,11 +20,14 @@ sys.path.append(_filename)
 #hx = HeatexTest({}).run().analyse().plot()
 
 # Storage
-from test_Storage import StorageTest
-hx = StorageTest({}).run().analyse().plot()
+#from test_Storage import StorageTest
+#hx = StorageTest({}).run().analyse().plot()
 
 from test_Discharge import DischargeTest
 hx = DischargeTest({}).run().analyse().plot()
+
+#from test_ThreeStepDischarge import ThreeStepDischargeTest
+#hx = ThreeStepDischargeTest({}).run().analyse().plot()
 
 #from test_Condenser import CondenserTest
 #hx = CondenserTest({}).run().analyse().plot()

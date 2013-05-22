@@ -23,7 +23,7 @@ cond['p_hi'] = 100
 cond['t_con'] = 20
 
 cond['molefrac_rcvr'] = 0.35 # Weak condition
-cond['molefrac_stor'] = 0.70  # Weak condition
+cond['molefrac_stor'] = 0.50  # Weak condition
 
 cond['nu_is'] = 0.8
 cond['nu_mech'] = 0.98
@@ -41,7 +41,7 @@ cond['Nseg'] = 5
 cond['Nseg_con'] = 1
 
 # Simulation guesses (iterate!!):
-cond['molefrac_tur'] = 0.5
+cond['molefrac_tur'] = 0.4
 cond['molefrac_lpp'] = 0.379
 cond['molefrac_n15'] = cond['molefrac_rcvr']
 cond['molefrac_n44'] = cond['molefrac_stor']
@@ -60,6 +60,7 @@ try:
     model = runner.run()
 except KeyboardInterrupt:
     # If it takes too long, we can also just return the last iteration
+    print('Halted execution..')
     model = runner.lastRun
 finally:
     eff = model.result['eff']

@@ -9,7 +9,7 @@ class ReceiverTest(model.DnaModel):
         self.nodes[1].update({
             'media': 'kalina',
             'y': 0.5,
-            't': 190,
+            'q': 0.4,
             'p': 100
         })
         self.nodes[2].update({

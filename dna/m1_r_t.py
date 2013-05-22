@@ -131,11 +131,11 @@ class MyModel(model.DnaModel):
         # Storage conditions:
         self.nodes[61].update({
             'media': 'other',
-            'cp': 1.5617, # kJ/kg*K
+            'cp': 1.447, # kJ/kg*K
             't': 443,
             'p': 1
         })
-        self.nodes[62]['t'] = 180
+        self.nodes[62]['t'] = 130
 
         self.nodes['47.1'].update({
             'media': 'kalina',

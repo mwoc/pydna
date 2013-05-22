@@ -16,7 +16,7 @@ class Receiver(Component):
         '''
         You're supposed to set input+output temperature and energy added, then you'll
         get mdot. Smaller temperature difference = larger mdot = larger receiver = double-plus ungood
-        So try to maximize temperature difference
+        So try to maximise temperature difference
         '''
 
         n = self.getNodes()
@@ -30,10 +30,10 @@ class Receiver(Component):
         if 'media' in n1:
             n2['media'] = n1['media']
 
-        if 't' in n1:
+        if 't' in n1 or 'q' in n1:
             state(n1)
 
-        if 't' in n2:
+        if 't' in n2 or 'q' in n2:
             state(n2)
 
         if 'mdot' in n1:
@@ -43,11 +43,11 @@ class Receiver(Component):
             # n1[t] and n2[t] have to be known
             n1['mdot'] = Qin / (n2['h'] - n1['h'])
             n2['mdot'] = n1['mdot']
-        elif not 't' in n1:
+        elif not 't' in n1 and not 'q' in n1:
             # n2[t] and mdot have to be known
             n1['h'] = n2['h'] - Qin / n1['mdot']
             state(n1)
-        elif not 't' in n2:
+        elif not 't' in n2 and not 'q' in n2:
             # n1[t] and mdot have to be known
             n2['h'] = n1['h'] + Qin / n1['mdot']
             state(n2)

@@ -206,6 +206,13 @@ def refpropState(node):
                 t = (propl['t'] + propr['t']) / 2
 
                 prop = rp.flsh('tp', t, in1, _node['x'])
+            else:
+                raise(e)
+                print(node)
+                print(mode)
+                print(in1)
+                print(in2)
+
         except rp.RefpropError as e:
             print(node)
             raise(e)

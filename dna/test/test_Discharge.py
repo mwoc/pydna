@@ -2,7 +2,7 @@ import components as comp
 import model
 
 # For plotting:
-from numpy import linspace
+import numpy as np
 import matplotlib.pyplot as plt
 
 def round_down(num, divisor):
@@ -17,23 +17,23 @@ class DischargeTest(model.DnaModel):
 
         self.nodes[1].update({
             'media': 'other',
-            'cp': 1.5617, # kJ/kg*K
-            't': 443,
+            'cp': 1.447, # kJ/kg*K
+            't': 445,
             'p': 1
         })
 
-        self.nodes[2]['t'] = 180
+        self.nodes[2]['t'] = 130
 
         self.nodes[3].update({
             'media': 'kalina',
-            'y': 0.9,
-            't': 175,
+            'y': 0.95,
+            't': 85,
             'p': 100
         })
 
-        self.nodes[4]['t'] = 438
+        self.nodes[4]['t'] = 440
 
-        heatex.calc(Nseg = 11, dTmin = 5, Q = 12500)
+        heatex.calc(Nseg = 37, dTmin = 5, Q = 12500)
 
         return self
 
@@ -41,10 +41,18 @@ class DischargeTest(model.DnaModel):
         print('Plotting...')
 
         result = self.result['heatex']
-        _title = '{0} - Pinch: {1:.2f}, eff: {2:.2%}, Q: {3:.2f} [kW]'.format('heatex'.capitalize(), result['dTmin'], result['eff'], result['Q'])
+        _title = '{0} - Pinch: {1:.2f}, Q: {3:.2f} [kW]'.format('heatex'.capitalize(), result['dTmin'], result['eff'], result['Q'])
 
         # Plot
-        x = linspace(0, 1, len(result['Th']))
+        dT = np.array(result['Th']) - np.array(result['Tc'])
+        print('dT = ', dT)
+
+        dT_mean = np.mean(dT)
+        print('dT_mean = ', dT_mean)
+
+        print(self.nodes[3]['t'],',', self.nodes[2]['t'],',', self.nodes[1]['mdot'],',', self.nodes[3]['mdot'], ',',dT_mean, ',',self.nodes[3]['q'])
+
+        x = np.linspace(0, 1, len(result['Th']))
         miny = round_down(min(min(result['Tc']), min(result['Th']))-1, 10)
         maxy = round_up(max(max(result['Tc']), max(result['Th']))+1, 10)
         plt.plot(x, result['Th'], 'r->', label = 'Hot')

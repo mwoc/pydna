@@ -26,6 +26,11 @@ class Turbine(component.Component):
 
         # Isentropic expansion first:
         n2s['s'] = n1['s']
+
+        #if not 'p' in n2s:
+        #    if 't' in n2s:
+        #        n2s['p'] = n2['p'] = states.state({'t': n2s['t'], 'y': n2s['y']})
+
         prop2s = states.state({'p':n2s['p'],'s':n2s['s'],'y':n2s['y']})
 
         # Apply isentropic efficiency:

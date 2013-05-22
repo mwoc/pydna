@@ -231,6 +231,7 @@ class DoubleSplitMix(Component):
 
             x.append(ratio)
             y.append(delta)
+            i = i + 1
 
         # Found split ratio, solve splitters and mixers
 

@@ -76,10 +76,6 @@ class PinchCalc:
 
         Q = n1['mdot'] * (n1['h'] - n2['h'])
 
-        print(Q_max_cold)
-        print(Q_max_hot)
-        print(Q)
-
         eff = Q / Q_max
 
         return {'dTmin':dT_pinch, 'Th':Th, 'Tc':Tc, 'percent': pinch_pos / self.Nseg, 'eff': eff, 'Q': Q}

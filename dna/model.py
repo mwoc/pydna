@@ -76,6 +76,44 @@ class IterateModel:
         self.cond = cond
         self.lastRun = model
 
+    def updateGuesses(self, res, tol, iterate, i):
+        print('Updating conditions based on residuals...')
+        # Loop over all residuals
+        for res_index, currRes in enumerate(res):
+
+            currIter = iterate[res_index]
+            currIter.delta = currRes['value'] - currRes['alter']
+
+            if abs(currIter.delta) > tol:
+
+                print(i + 1, ' - ', currRes['cond'], ': ', self.cond[currRes['cond']])
+
+                print('x = ', currIter.x)
+                print('y = ', currIter.y)
+                print('delta = ', currIter.delta)
+
+                # Get new guess:
+                self.cond[currRes['cond']] = currIter.optimize(currRes['alter'])
+
+                # From here on self.cond[currRes['cond']] is guaranteed available, so use it
+
+                # Apply range
+                orig = self.cond[currRes['cond']]
+                self.cond[currRes['cond']] = max(currRes['range'][0], self.cond[currRes['cond']])
+                self.cond[currRes['cond']] = min(currRes['range'][1], self.cond[currRes['cond']])
+
+                if self.cond[currRes['cond']] != orig:
+                    self.cond[currRes['cond']] = currRes['alter'] + currIter.delta
+
+                    # Make sure this does not also fall out of range
+
+                    self.cond[currRes['cond']] = max(currRes['range'][0], self.cond[currRes['cond']])
+                    self.cond[currRes['cond']] = min(currRes['range'][1], self.cond[currRes['cond']])
+
+                    print('Using manual guess instead of: ',orig)
+
+                print(i + 1, ' - ', currRes['cond'], ': ', self.cond[currRes['cond']])
+
     def run(self, oldResult = False):
         '''
         This runs an iteration to make a specific value in the model match a condition
@@ -88,6 +126,7 @@ class IterateModel:
         # Global iterate vars
         i = 0
         maxDelta = 1
+        totalDelta = 0
 
         if oldResult is not False:
             model = oldResult
@@ -103,7 +142,8 @@ class IterateModel:
 
         # Prepare iterator helpers
         iterate = []
-        tol = 0.001
+        deltas = []
+        tol = 0.01
 
         for res_index, currRes in enumerate(res):
 
@@ -126,44 +166,10 @@ class IterateModel:
                 iterate[-1].x.append(self.cond[currRes['cond']])
                 iterate[-1].y.append(iterate[-1].delta)
 
-        while abs(maxDelta) > tol and i < 20:
+        while abs(maxDelta) > tol and i < 25:
 
-            print('Updating conditions based on residuals...')
-            # Loop over all residuals
-            for res_index, currRes in enumerate(res):
-
-                currIter = iterate[res_index]
-                currIter.delta = currRes['value'] - currRes['alter']
-
-                if abs(currIter.delta) > tol:
-
-                    print(i + 1, ' - ', currRes['cond'], ': ', self.cond[currRes['cond']])
-
-                    print('x = ', currIter.x)
-                    print('y = ', currIter.y)
-                    print('delta = ', currIter.delta)
-
-                    # Get new guess:
-                    self.cond[currRes['cond']] = currIter.optimize(currRes['alter'])
-
-                    # From here on self.cond[currRes['cond']] is guaranteed available, so use it
-
-                    # Apply range
-                    orig = self.cond[currRes['cond']]
-                    self.cond[currRes['cond']] = max(currRes['range'][0], self.cond[currRes['cond']])
-                    self.cond[currRes['cond']] = min(currRes['range'][1], self.cond[currRes['cond']])
-
-                    if self.cond[currRes['cond']] != orig:
-                        self.cond[currRes['cond']] = currRes['alter'] + currIter.delta
-
-                        # Make sure this does not also fall out of range
-
-                        self.cond[currRes['cond']] = max(currRes['range'][0], self.cond[currRes['cond']])
-                        self.cond[currRes['cond']] = min(currRes['range'][1], self.cond[currRes['cond']])
-
-                        print('Using manual guess instead of: ',orig)
-
-                    print(i + 1, ' - ', currRes['cond'], ': ', self.cond[currRes['cond']])
+            #update guesses
+            self.updateGuesses(res, tol, iterate, i)
 
             i = i + 1
 
@@ -192,6 +198,8 @@ class IterateModel:
                     oldDelta = currIter.delta
                     currIter.delta = currRes['value'] - currRes['alter']
 
+                    totalDelta = totalDelta + abs(currIter.delta)
+
                     if abs(currIter.delta) > abs(maxDelta):
                         maxDelta = currIter.delta # maxDelta is for controlling the while loop
 
@@ -205,10 +213,25 @@ class IterateModel:
                         currIter.x.append(self.cond[currRes['cond']])
                         currIter.y.append(currIter.delta)
 
+                deltas.append(totalDelta)
+
+                if i < 4 and len(deltas) > 1 and deltas[-2] < deltas[-1]:
+                    #in the beginning, we might need to help a bit to clear out bad guesses
+
+                    print('Clearing guesses!')
+                    for index, currIter in enumerate(iterate):
+                        if len(currIter.x) > 1:
+                            del currIter.x[-2]
+                            del currIter.y[-2]
+
+
             # Export temporary results after each iteration
             model.export('tmp' + str(i))
             self.lastRun = model
 
         print('Finished iteration')
+
+        #want to see resulting deltas
+        self.updateGuesses(res, tol, iterate, i)
 
         return model

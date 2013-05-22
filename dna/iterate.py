@@ -3,53 +3,30 @@ import scipy.optimize
 
 class IterateParamHelper:
     def __init__(self):
-        self.i = 0
         self.x = []
         self.y = []
         self.delta = 1
+        self.hasCleared = False
         self.lastPop = 0
 
-    def optimize(self, currVal, manual = True):
+    def iterate(self, currVal, maxOrder = 2):
 
-        newVal = False
         tol = 0.01
+        newVal = 0
+        allowPop = True
 
-        if manual is True and abs(self.delta) > 0.5 and len(self.x) <= 3:
-            # Pre-seed x/y as long as delta is large. This should make
-            # the actual iteration later on quicker
-            print('manual')
-            newVal = currVal + 0.5 * self.delta
+        try:
+            '''
+            First find order for current data set
+            If order higher than 2, cut off first item and try again
+            Lastly, find zero
+            '''
+            foundOrder = maxOrder + 1 # Else the loop won't run
 
-        elif len(self.x) > 1:
+            while allowPop is True and foundOrder > maxOrder:
 
-            try:
-                '''
-                First find order for current data set
-                If order higher than 2, cut off first item and try again
-                Lastly, find zero
-                '''
                 order = 0
                 delta = 1
-
-                if len(self.x) > 5:
-                    bmin = min(self.y)
-                    bmax = max(self.y)
-
-                    if abs(bmin) > abs(bmax):
-                        val = bmin
-                    else:
-                        val = bmax
-
-                    i = self.y.index(val)
-
-                    if i == len(self.x)-1 or i is self.lastPop:
-                        i = 0
-
-                    print('popping number ', i)
-                    self.x.pop(i)
-                    self.y.pop(i)
-                    self.lastPop = i
-
 
                 while abs(delta) > tol and order < len(self.x):
 
@@ -66,10 +43,12 @@ class IterateParamHelper:
                     # Find zero
                     newVal = scipy.optimize.newton(p,currVal)
 
+                foundOrder = order
+
                 print('order: ', order)
                 print('delta: ', delta)
 
-                if order > 3:
+                if order > maxOrder:
                     # Anything higher than 2nd order is problematic, we want
                     # at most cubic interpolation. Cut out the largest deviation
                     print('popping tags')
@@ -90,31 +69,57 @@ class IterateParamHelper:
                     self.y.pop(i)
                     self.lastPop = i
 
-                # Try again
-                order = 0
-                delta = 1
-                while abs(delta) > tol and order < len(self.x):
+                    if len(self.x) <= 3:
+                        allowPop = False
 
-                    order = order + 1
+        except RuntimeError as e:
 
-                    z = np.polyfit(self.x, self.y, order, full=True)
-                    p = np.poly1d(z[0])
+            # Went an order too high
+            z = np.polyfit(self.x, self.y, order - 1, full=True)
+            p = np.poly1d(z[0])
 
-                    if len(z[1]) == 1:
-                        delta = z[1]
-                    else:
-                        delta = 0
+            newVal = scipy.optimize.newton(p,currVal)
 
-                    # Find zero
-                    newVal = scipy.optimize.newton(p,currVal)
+        return newVal
 
-            except RuntimeError as e:
+    def optimize(self, currVal, manual = True):
 
-                # Went an order too high
-                z = np.polyfit(self.x, self.y, order - 1, full=True)
-                p = np.poly1d(z[0])
+        newVal = False
 
-                newVal = scipy.optimize.newton(p,currVal)
+        if len(self.x) > 5:
+            bmin = min(self.y)
+            bmax = max(self.y)
+
+            if abs(bmin) > abs(bmax):
+                val = bmin
+            else:
+                val = bmax
+
+            i = self.y.index(val)
+
+            if i == len(self.x)-1 or i is self.lastPop:
+                i = 0
+
+            print('popping number ', i)
+            self.x.pop(i)
+            self.y.pop(i)
+            self.lastPop = i
+
+        if manual is True and abs(self.delta) > 0.5:
+            # Pre-seed x/y as long as delta is large. This should make
+            # the actual iteration later on quicker
+            print('manual')
+            newVal = currVal + 0.5 * self.delta
+
+            if len(self.x) > 3 and self.hasCleared is False:
+                self.hasCleared = True
+                self.x = []
+                self.y = []
+                self.lastPop = 0
+
+        elif len(self.x) > 1:
+
+            newVal = self.iterate(currVal, maxOrder = 2)
         else:
             if currVal < 1:
                 # Be extra careful for low values
