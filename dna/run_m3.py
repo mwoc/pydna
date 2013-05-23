@@ -50,11 +50,11 @@ if len(sys.argv) > 1:
 
     for i, opt in enumerate(optlist):
 
-        if opt[0] is '--pressure':
+        if opt[0] == '--pressure':
             cond['p_hi'] = float(opt[1])
-        elif opt[0] is '--y-rcvr':
+        elif opt[0] == '--y-rcvr':
             cond['molefrac_rcvr'] = float(opt[1])
-        elif opt[0] is '--y-stor':
+        elif opt[0] == '--y-stor':
             cond['molefrac_stor'] = float(opt[1])
 
 # Simulation guesses (iterate!!):
@@ -81,7 +81,13 @@ except KeyboardInterrupt:
 finally:
     eff = model.result['eff']
 
-    model.export('m3/m3-p{:.2f}-yr{:.2f}-ys{:.2f}'.format(cond['p_hi'], cond['molefrac_n15'], cond['molefrac_n44']))
+    simname = 'm3-p{:.2f}-yr{:.2f}-ys{:.2f}'.format(cond['p_hi'], cond['molefrac_n15'], cond['molefrac_n44'])
+
+    # Export result
+    model.export('m3/'+simname)
+
+    # Export log
+    runner.export('m3/'+simname+'-log')
 
 print('Plotting...')
 com = model.result

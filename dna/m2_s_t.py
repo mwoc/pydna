@@ -330,7 +330,7 @@ class MyModel(model.DnaModel):
         # Nerge streams 5+52 > 6
         components['mixprh2'].calc()
 
-        self.efficiency()
+        print(self.efficiency())
 
         return self
 

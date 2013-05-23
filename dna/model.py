@@ -65,17 +65,18 @@ class DnaModel:
                 writer.writerow(dict((k,item[k] if k in item else '-') for k in fieldnames))
 
             csvfile.close()
-            print('Export done')
+        print('Export done')
 
 class IterateModel:
     '''
     My heart's a mess. Make me iterate better
     '''
     def __init__(self, model, cond):
+        self.i = 0
         self.model = model
         self.cond = cond
         self.iterate = []
-        self.lastRun = model
+        self.lastRun = None
 
     def getDelta(self, res, index = None):
         '''
@@ -107,7 +108,7 @@ class IterateModel:
             return [currIter]
         return
 
-    def updateGuesses(self, res, i):
+    def updateGuesses(self, res):
         print('Updating conditions based on residuals...')
         # Loop over all residuals
 
@@ -117,7 +118,7 @@ class IterateModel:
 
             if abs(currIter.delta) > currIter.tol:
 
-                print(i + 1, ' - ', currRes['cond'], ': ', self.cond[currRes['cond']])
+                print(self.i + 1, ' - ', currRes['cond'], ': ', self.cond[currRes['cond']])
 
                 print('x = ', currIter.x)
                 print('y = ', currIter.y)
@@ -143,7 +144,51 @@ class IterateModel:
 
                     print('Using manual guess instead of: ',orig)
 
-                print(i + 1, ' - ', currRes['cond'], ': ', self.cond[currRes['cond']])
+                print(self.i + 1, ' - ', currRes['cond'], ': ', self.cond[currRes['cond']])
+
+    def export(self, filename):
+        # Print to csv file
+        with open('../output/'+filename+'.csv','w',newline='',encoding='utf-8') as csvfile:
+            print('Exporting log to csv file...')
+
+            writer = csv.writer(csvfile,delimiter=',',quotechar='"',quoting=csv.QUOTE_MINIMAL)
+
+            writer.writerow(['Ran {:d} iterations'.format(self.i)])
+
+            writer.writerow([])
+            writer.writerow(['RESIDUALS:'])
+            writer.writerow(['Condition', 'Value', 'Residual'])
+
+            for i, currIter in enumerate(self.iterate):
+                writer.writerow([currIter.cond, self.cond[currIter.cond], currIter.delta])
+                print('{0}: {1:.2f} ({2:+.3e})'.format(currIter.cond, self.cond[currIter.cond], currIter.delta))
+
+            writer.writerow([])
+            writer.writerow(['CONDITIONS:'])
+            writer.writerow(['Condition', 'Value'])
+
+            for i in self.cond:
+                writer.writerow([i, self.cond[i]])
+
+            writer.writerow([])
+            writer.writerow(['EFFICIENCY:'])
+
+            print(self.lastRun)
+            eff = self.lastRun.efficiency()
+
+            writer.writerow(['Param', 'Value'])
+
+            if 'Q_in' in eff:
+                writer.writerow(['Q_in', eff['Q_in']])
+            if 'W_in' in eff:
+                writer.writerow(['W_in', eff['W_in']])
+            if 'W_out' in eff:
+                writer.writerow(['W_out', eff['W_out']])
+            if 'eff' in eff:
+                writer.writerow(['Eff.:', eff['eff']])
+
+            csvfile.close()
+        print('Export done')
 
     def run(self, oldResult = False):
         '''
@@ -156,7 +201,6 @@ class IterateModel:
         print('*' * 60)
 
         # Global iterate vars
-        i = 0
         maxDelta = 1
         totalDelta = 0
 
@@ -166,6 +210,7 @@ class IterateModel:
             # Get initial state:
             print('Getting initial state')
             model = self.model(self.cond).init().run()
+            self.lastRun = model
 
             model.export('tmp0')
 
@@ -203,12 +248,12 @@ class IterateModel:
             else:
                 currIter.tol = tol
 
-        while abs(maxDelta) > tol and i < 30:
+        while abs(maxDelta) > tol and self.i < 30:
 
             #update guesses
-            self.updateGuesses(res, i)
+            self.updateGuesses(res)
 
-            i = i + 1
+            self.i = self.i + 1
 
             # Init the model (overwrite existing)
             model = self.model(self.cond).init()
@@ -244,7 +289,7 @@ class IterateModel:
 
                 deltas.append(totalDelta)
 
-                if i < 4 and len(deltas) > 1 and deltas[-2] < deltas[-1]:
+                if self.i < 4 and len(deltas) > 1 and deltas[-2] < deltas[-1]:
                     #in the beginning, we might need to help a bit to clear out bad guesses
 
                     print('Clearing guesses!')
@@ -255,16 +300,14 @@ class IterateModel:
 
 
             # Export temporary results after each iteration
-            model.export('tmp' + str(i))
+            model.export('tmp' + str(self.i))
             self.lastRun = model
 
         print('Finished iteration')
         print('*' * 60)
 
         #want to see resulting deltas
+
         self.getDelta(res)
-        print('Final guesses and residuals: ')
-        for i, currIter in enumerate(self.iterate):
-            print('{0}: {1:.2f} ({2:+.3e})'.format(currIter.cond, self.cond[currIter.cond], currIter.delta))
 
         return model

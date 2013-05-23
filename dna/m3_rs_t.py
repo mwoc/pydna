@@ -330,7 +330,7 @@ class MyModel(model.DnaModel):
         # Nerge streams 5+52 > 6
         components['mixprh2'].calc()
 
-        self.efficiency()
+        print(self.efficiency())
 
         return self
 
@@ -459,9 +459,4 @@ class MyModel(model.DnaModel):
 
         self.result['eff'] = (W_out - W_in) / Q_in
 
-        print('Q_in: ', Q_in)
-        print('W_in: ', W_in)
-        print('W_out: ', W_out)
-        print('eff: ', self.result['eff'])
-
-        return self
+        return {'Q_in': Q_in, 'W_in': W_in, 'W_out': W_out, 'eff': self.result['eff']}
