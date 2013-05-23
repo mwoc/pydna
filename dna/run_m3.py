@@ -1,3 +1,5 @@
+import sys
+import getopt
 import collections
 from numpy import linspace
 import matplotlib.pyplot as plt
@@ -37,8 +39,23 @@ cond['pinch_hex'] = 5
 cond['pinch_con'] = 4
 cond['pinch_stor'] = 20
 
-cond['Nseg'] = 5
+cond['Nseg'] = 11
 cond['Nseg_con'] = 1
+
+# Handle command line options
+if len(sys.argv) > 1:
+    _args = sys.argv.copy()
+    _args.pop(0)
+    optlist, args = getopt.getopt(_args, '', ['pressure=', 'y-rcvr=', 'y-stor='])
+
+    for i, opt in enumerate(optlist):
+
+        if opt[0] is '--pressure':
+            cond['p_hi'] = float(opt[1])
+        elif opt[0] is '--y-rcvr':
+            cond['molefrac_rcvr'] = float(opt[1])
+        elif opt[0] is '--y-stor':
+            cond['molefrac_stor'] = float(opt[1])
 
 # Simulation guesses (iterate!!):
 cond['molefrac_lpp'] = 0.3
