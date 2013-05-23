@@ -25,8 +25,7 @@ class StorageTest(model.DnaModel):
 
 
         self.nodes[3].update({
-            'media': 'other',
-            'cp': 1.5617, # kJ/kg*K
+            'media': 'hitec',
             't': 180,
             'p': 1,
             'mdot': 2

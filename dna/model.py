@@ -74,17 +74,48 @@ class IterateModel:
     def __init__(self, model, cond):
         self.model = model
         self.cond = cond
+        self.iterate = []
         self.lastRun = model
 
-    def updateGuesses(self, res, tol, iterate, i):
-        print('Updating conditions based on residuals...')
-        # Loop over all residuals
-        for res_index, currRes in enumerate(res):
+    def getDelta(self, res, index = None):
+        '''
+        Input: residuals and optional index
+        Output: array with iteration helpers
+        '''
 
-            currIter = iterate[res_index]
+        if not index:
+            for resIndex, currRes in enumerate(res):
+                currIter = self.iterate[resIndex]
+                currIter.delta = currRes['value'] - currRes['alter']
+
+                if abs(currIter.delta) < currIter.tol:
+                    # Clear iteratorHelper when reaching desired tolerance
+                    currIter.x = []
+                    currIter.y = []
+
+            return self.iterate
+        else:
+            currRes = res[index]
+            currIter = self.iterate[index]
             currIter.delta = currRes['value'] - currRes['alter']
 
-            if abs(currIter.delta) > tol:
+            if abs(currIter.delta) < currIter.tol:
+                # Clear iteratorHelper when reaching desired tolerance
+                currIter.x = []
+                currIter.y = []
+
+            return [currIter]
+        return
+
+    def updateGuesses(self, res, i):
+        print('Updating conditions based on residuals...')
+        # Loop over all residuals
+
+        for res_index, currRes in enumerate(res):
+
+            currIter = self.getDelta(res, index = res_index)[0]
+
+            if abs(currIter.delta) > currIter.tol:
 
                 print(i + 1, ' - ', currRes['cond'], ': ', self.cond[currRes['cond']])
 
@@ -122,6 +153,7 @@ class IterateModel:
         # FIXME: Running an iteration with False as initial guess is troublesome
 
         print('Starting iteration for full model')
+        print('*' * 60)
 
         # Global iterate vars
         i = 0
@@ -141,7 +173,6 @@ class IterateModel:
         res = model.residuals()
 
         # Prepare iterator helpers
-        iterate = []
         deltas = []
         tol = 0.01
 
@@ -159,23 +190,30 @@ class IterateModel:
             if not 'range' in currRes:
                 raise Exception('Have to specify range')
 
-            iterate.append(IterateParamHelper())
+            currIter = IterateParamHelper()
+            currIter.cond = currRes['cond']
+            self.iterate.append(currIter)
 
             if self.cond[currRes['cond']] != False:
-                iterate[-1].delta = currRes['value'] - currRes['alter']
-                iterate[-1].x.append(self.cond[currRes['cond']])
-                iterate[-1].y.append(iterate[-1].delta)
+                currIter.delta = currRes['value'] - currRes['alter']
+                currIter.append(self.cond[currRes['cond']], currIter.delta)
 
-        while abs(maxDelta) > tol and i < 25:
+            if 'tol' in currRes:
+                currIter.tol = currRes['tol']
+            else:
+                currIter.tol = tol
+
+        while abs(maxDelta) > tol and i < 30:
 
             #update guesses
-            self.updateGuesses(res, tol, iterate, i)
+            self.updateGuesses(res, i)
 
             i = i + 1
 
             # Init the model (overwrite existing)
             model = self.model(self.cond).init()
 
+            print('*' * 60)
             print('Done. Re-running model...')
 
             try:
@@ -192,26 +230,17 @@ class IterateModel:
                 maxDelta = 0
 
                 for res_index, currRes in enumerate(res):
-                    currIter = iterate[res_index]
-                    # Update looping parameters
-
-                    oldDelta = currIter.delta
-                    currIter.delta = currRes['value'] - currRes['alter']
+                    # Get current delta
+                    currIter = self.getDelta(res, index = res_index)[0]
 
                     totalDelta = totalDelta + abs(currIter.delta)
 
                     if abs(currIter.delta) > abs(maxDelta):
                         maxDelta = currIter.delta # maxDelta is for controlling the while loop
 
-                    if abs(currIter.delta) < tol:
-                        # Clear iteratorHelper when reaching desired tolerance
-                        currIter.x = []
-                        currIter.y = []
-
                     if currIter.delta != 0:
-                        # Be sure to not store exact matches, they break optimize()
-                        currIter.x.append(self.cond[currRes['cond']])
-                        currIter.y.append(currIter.delta)
+                        # Try to append new x/y values to iterator
+                        currIter.append(self.cond[currRes['cond']], currIter.delta)
 
                 deltas.append(totalDelta)
 
@@ -219,7 +248,7 @@ class IterateModel:
                     #in the beginning, we might need to help a bit to clear out bad guesses
 
                     print('Clearing guesses!')
-                    for index, currIter in enumerate(iterate):
+                    for index, currIter in enumerate(self.iterate):
                         if len(currIter.x) > 1:
                             del currIter.x[-2]
                             del currIter.y[-2]
@@ -230,8 +259,12 @@ class IterateModel:
             self.lastRun = model
 
         print('Finished iteration')
+        print('*' * 60)
 
         #want to see resulting deltas
-        self.updateGuesses(res, tol, iterate, i)
+        self.getDelta(res)
+        print('Final guesses and residuals: ')
+        for i, currIter in enumerate(self.iterate):
+            print('{0}: {1:.2f} ({2:+.3e})'.format(currIter.cond, self.cond[currIter.cond], currIter.delta))
 
         return model

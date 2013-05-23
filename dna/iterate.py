@@ -5,13 +5,33 @@ class IterateParamHelper:
     def __init__(self):
         self.x = []
         self.y = []
+        self.cond = ''
         self.delta = 1
+        self.tol = 0.0001
         self.hasCleared = False
         self.lastPop = 0
 
+    def append(self, x, y):
+
+        # Guard against duplicates, as these hamper convergence:
+        if x in self.x:
+            i = self.x.index(x)
+            self.x.pop(i)
+            self.y.pop(i)
+
+        if y in self.y:
+            i = self.y.index(x)
+            self.x.pop(i)
+            self.y.pop(i)
+
+        self.x.append(x)
+        self.y.append(y)
+
+        return self
+
     def iterate(self, currVal, maxOrder = 2):
 
-        tol = 0.01
+        tol = 0.001 #mainly important for mass fractions
         newVal = 0
         allowPop = True
 
@@ -51,8 +71,8 @@ class IterateParamHelper:
                 if order > maxOrder:
                     # Anything higher than 2nd order is problematic, we want
                     # at most cubic interpolation. Cut out the largest deviation
-                    print('popping tags')
-                    print(self.y)
+                    #print('popping tags')
+                    #print(self.y)
 
                     min_y = min(self.y)
                     max_y = max(self.y)
@@ -64,7 +84,7 @@ class IterateParamHelper:
                     if i == len(self.x)-1 or i is self.lastPop:
                         i = 0
 
-                    print('popping number ', i)
+                    #print('popping number ', i)
                     self.x.pop(i)
                     self.y.pop(i)
                     self.lastPop = i
@@ -100,15 +120,15 @@ class IterateParamHelper:
             if i == len(self.x)-1 or i is self.lastPop:
                 i = 0
 
-            print('popping number ', i)
+            #print('popping number ', i)
             self.x.pop(i)
             self.y.pop(i)
             self.lastPop = i
 
-        if manual is True and abs(self.delta) > 0.5:
+        if manual is True and abs(self.delta) > 0.25:
             # Pre-seed x/y as long as delta is large. This should make
             # the actual iteration later on quicker
-            print('manual')
+            print('Newton')
             newVal = currVal + 0.5 * self.delta
 
             if len(self.x) > 3 and self.hasCleared is False:
@@ -118,9 +138,10 @@ class IterateParamHelper:
                 self.lastPop = 0
 
         elif len(self.x) > 1:
-
+            print('Polynomial')
             newVal = self.iterate(currVal, maxOrder = 2)
         else:
+            print('Newton')
             if currVal < 1:
                 # Be extra careful for low values
                 newVal = currVal + 0.25 * self.delta

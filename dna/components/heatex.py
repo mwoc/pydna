@@ -105,8 +105,6 @@ class PinchCalc:
 
         result = {}
 
-        print('Running pinch point iteration, this may take a while...')
-
         find_mdot = False
         find_mdot1 = False
         find_mdot3 = False
@@ -196,14 +194,10 @@ class PinchCalc:
             print(delta, convergence, i)
             raise ConvergenceError('No convergence reached')
 
-        print('Pinch point iteration finished.')
-
         if not 'pinch' in result:
             print('No pinch solution found')
             return False
         else:
-            print('Update your model with these outlet temperatures:')
-            print('T2: ', _n2['t'], ' T4: ', _n4['t'])
             self.n1.update(_n1)
             self.n2.update(_n2)
             self.n3.update(_n3)
@@ -239,16 +233,17 @@ class PinchHex(component.Component):
 
         if 'media' in n1:
             n2['media'] = n1['media']
-            if n2['media'] == 'other':
-                n2['cp'] = n1['cp']
+
+        if 'cp' in n2:
+            n2['cp'] = n1['cp']
 
         n4['p'] = n3['p']
         n4['y'] = n3['y']
 
         if 'media' in n3:
             n4['media'] = n3['media']
-            if n3['media'] == 'other':
-                n4['cp'] = n3['cp']
+        if 'cp' in n3:
+            n4['cp'] = n3['cp']
 
         calc = False
 
@@ -311,6 +306,9 @@ class PinchHex(component.Component):
                     except refprop.RefpropError as e:
                         print('Second side iteration also failed.')
                         raise Exception(e)
+                finally:
+                    print('Pinch - {} - following outlet temperatures found:'.format(self.name))
+                    print('T2: ', n2['t'], ' T4: ', n4['t'])
 
         elif not 't' in n4 and not 'q' in n4:
             # Calculate T4 for given mass flow rates and other temperatures
@@ -342,7 +340,7 @@ class PinchHex(component.Component):
             n1['mdot'] = ((n4['h'] - n3['h']) * n3['mdot']) / (n1['h'] - n2['h'])
 
         if calc == False:
-            print('Model overly specified for heatex')
+            print('Model overly specified for heatex `{}`'.format(self.name))
 
         n2['mdot'] = n1['mdot']
         n4['mdot'] = n3['mdot']
@@ -353,7 +351,7 @@ class PinchHex(component.Component):
         self.storeResult(pinch)
 
         if abs(pinch['dTmin'] - dTmin) > 0.1:
-            print('Pinch too small or too large')
+            print('Pinch - {} - value {:.2f} not enforced, found {:.2f} from conditions'.format(self.name, dTmin, pinch['dTmin']))
 
         return self
 

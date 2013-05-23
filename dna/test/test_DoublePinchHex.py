@@ -16,8 +16,7 @@ class DoublePinchHexTest(DnaModel):
         heatex = self.addComponent(comp.PinchHex, 'heatex').nodes(1, 2, 3, 4)
 
         self.nodes[1].update({
-            'media': 'other',
-            'cp': 1.5617, # kJ/kg*K
+            'media': 'hitec',
             't': 430,
             'p': 0.857
         })

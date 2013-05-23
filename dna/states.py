@@ -24,16 +24,15 @@ molWH2O = rp.info(2)['wmm']
 
 def state(node):
 
-    userp = True
+    use_rp = True
 
     if 'media' in node:
-        if node['media'] == 'other':
-            if not 'cp' in node:
-                raise Exception('When using media "other", cp has to be specified')
-            else:
-                userp = False
+        usermedia = {'hitecxl': 1.447, 'hitec': 1.5617}
+        if node['media'] in usermedia:
+            node['cp'] = usermedia[node['media']]
+            use_rp = False
 
-    if userp:
+    if use_rp:
         return refpropState(node)
     else:
         return cpBasedState(node)

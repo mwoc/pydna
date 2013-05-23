@@ -16,8 +16,7 @@ class DischargeTest(model.DnaModel):
         heatex = self.addComponent(comp.PinchHex, 'heatex').nodes(1, 2, 3, 4)
 
         self.nodes[1].update({
-            'media': 'other',
-            'cp': 1.447, # kJ/kg*K
+            'media': 'hitecxl',
             't': 445,
             'p': 1
         })

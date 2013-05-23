@@ -260,8 +260,6 @@ class DoubleSplitMix(Component):
         states.state(no_lean)
         states.state(no_rich)
 
-        print('Finished iterating')
-
         return self
 
     def calc(self):

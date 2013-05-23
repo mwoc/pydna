@@ -2,7 +2,7 @@ import collections
 from numpy import linspace
 import matplotlib.pyplot as plt
 
-import m1_r_t
+import m2_s_t
 from model import IterateModel
 
 def round_down(num, divisor):
@@ -22,8 +22,8 @@ cond['t_steam'] = 450
 cond['p_hi'] = 100
 cond['t_con'] = 20
 
-cond['molefrac_rcvr'] = 0.35 # Weak condition
-cond['molefrac_stor'] = 0.50  # Weak condition
+cond['molefrac_rcvr'] = 0.4 # Weak condition
+cond['molefrac_stor'] = 0.6  # Weak condition
 
 cond['nu_is'] = 0.8
 cond['nu_mech'] = 0.98
@@ -41,8 +41,7 @@ cond['Nseg'] = 5
 cond['Nseg_con'] = 1
 
 # Simulation guesses (iterate!!):
-cond['molefrac_tur'] = 0.4
-cond['molefrac_lpp'] = 0.379
+cond['molefrac_lpp'] = 0.3
 cond['molefrac_n15'] = cond['molefrac_rcvr']
 cond['molefrac_n44'] = cond['molefrac_stor']
 
@@ -56,7 +55,7 @@ cond['t_node47.1'] = 80
 
 # Pass initial conditions to model and run/iterate it
 try:
-    runner = IterateModel(m1_r_t.MyModel, cond)
+    runner = IterateModel(m2_s_t.MyModel, cond)
     model = runner.run()
 except KeyboardInterrupt:
     # If it takes too long, we can also just return the last iteration

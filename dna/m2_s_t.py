@@ -95,8 +95,8 @@ class MyModel(model.DnaModel):
         cond = self.cond
 
         # Guess params for dividing mass flow in splitprh1 and splitprh2
-        frac_stor = cond['Q_stor'] / (cond['Q_stor'] + cond['Q_rcvr'])
-        frac_rcvr = 1 - frac_stor
+        frac_stor = 1#cond['Q_stor'] / (cond['Q_stor'] + cond['Q_rcvr'])
+        frac_rcvr = 0#1 - frac_stor
 
         # Simulation params
         t_sat = cond['t_con'] + cond['pinch_con']
@@ -109,29 +109,28 @@ class MyModel(model.DnaModel):
 
         p_me = states.state({
             'media': 'kalina',
-            'y': max(cond['molefrac_n15'], cond['molefrac_n44']),
+            'y': cond['molefrac_n44'],
             't': t_sat,
             'q': 0
         })['p']
 
         t_sat_stor = states.state({'p': p_me, 'y': cond['molefrac_n44'], 'q': 0})['t']
-        t_sat_rcvr = states.state({'p': p_me, 'y': cond['molefrac_n15'], 'q': 0})['t']
+        #t_sat_rcvr = states.state({'p': p_me, 'y': cond['molefrac_n15'], 'q': 0})['t']
 
         # Receiver conditions:
-        self.nodes['18.1'].update({
-            'media': 'kalina',
-            'y': cond['molefrac_n15'],
-            'p': cond['p_hi'],
-            't': cond['t_node18.1']
-        })
-        self.nodes[19]['t'] = cond['t_steam']
+        #self.nodes['18.1'].update({
+        #    'media': 'kalina',
+        #    'y': cond['molefrac_n15'],
+        #    'p': cond['p_hi'],
+        #    't': cond['t_node18.1']
+        #})
+        #self.nodes[19]['t'] = cond['t_steam']
 
-        components['receiver'].calc(cond['Q_rcvr'])
+        #components['receiver'].calc(cond['Q_rcvr'])
 
         # Storage conditions:
         self.nodes[61].update({
-            'media': 'other',
-            'cp': 1.447, # kJ/kg*K
+            'media': 'hitecxl',
             't': 443,
             'p': 1
         })
@@ -350,7 +349,7 @@ class MyModel(model.DnaModel):
         # Convenience:
         t_sat = self.cond['t_con'] + self.cond['pinch_con']
 
-        # This means: match molefrac_tur and n8[y]
+        # This means: match molefrac_lpp and n8[y]
         res.append({
             'cond': 'molefrac_lpp',
             'value': self.nodes[8]['y'],
