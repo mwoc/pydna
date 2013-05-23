@@ -79,7 +79,7 @@ except KeyboardInterrupt:
     print('Halted execution..')
     model = runner.lastRun
 finally:
-    eff = model.result['eff']
+    #eff = model.result['eff']
 
     simname = 'm3-p{:.2f}-yr{:.2f}-ys{:.2f}'.format(cond['p_hi'], cond['molefrac_n15'], cond['molefrac_n44'])
 

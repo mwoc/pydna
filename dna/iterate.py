@@ -129,7 +129,13 @@ class IterateParamHelper:
             # Pre-seed x/y as long as delta is large. This should make
             # the actual iteration later on quicker
             print('Newton')
-            newVal = currVal + 0.5 * self.delta
+            if currVal < 1:
+                # Be extra careful for low values
+                newVal = currVal + 0.1 * self.delta
+            else:
+                newVal = currVal + 0.5 * self.delta
+
+            #newVal = currVal + 0.5 * self.delta
 
             if len(self.x) > 3 and self.hasCleared is False:
                 self.hasCleared = True
@@ -141,10 +147,11 @@ class IterateParamHelper:
             print('Polynomial')
             newVal = self.iterate(currVal, maxOrder = 2)
         else:
-            print('Newton')
+            print('Newton backup')
+            print(currVal)
             if currVal < 1:
                 # Be extra careful for low values
-                newVal = currVal + 0.25 * self.delta
+                newVal = currVal + 0.1 * self.delta
             else:
                 newVal = currVal + 0.5 * self.delta
 
