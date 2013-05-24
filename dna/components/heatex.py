@@ -4,6 +4,7 @@ import scipy
 import scipy.optimize
 import refprop
 import component
+import warnings
 
 class ConvergenceError(Exception):
     def __init__(self, value):
@@ -195,7 +196,7 @@ class PinchCalc:
             raise ConvergenceError('No convergence reached')
 
         if not 'pinch' in result:
-            print('No pinch solution found')
+            warnings.warn('No pinch solution found', RuntimeWarning)
             return False
         else:
             self.n1.update(_n1)

@@ -150,6 +150,27 @@ def fromRefprop(prop):
 
     return node
 
+def _PHworkaround(_node, depth = 1):
+
+    if depth > 5:
+        print(_node)
+        raise RuntimeError('Failed to find state for node')
+
+    x = _node['x']
+    molWmix = float(x[0]) * float(molWNH3) + float(x[1]) * float(molWH2O)
+
+    try:
+        propl = rp.flsh('ph', _node['p'], _node['h'] - 25*molWmix*depth, _node['x'])
+        propr = rp.flsh('ph', _node['p'], _node['h'] + 25*molWmix*depth, _node['x'])
+        t = (propl['t'] + propr['t']) / 2
+
+        prop = rp.flsh('tp', t, _node['p'], _node['x'])
+    except rp.RefpropError as e:
+        _depth = depth + 1
+        prop = _PHworkaround(_node, depth = _depth)
+
+    return prop
+
 def refpropState(node):
     '''
     If the state is to be found from refprop, use this method
@@ -198,13 +219,8 @@ def refpropState(node):
         try:
             if mode is 'ph':
                 # Assume something in the 2-phase region. temperature changes very little with enthalpy
-                x = _node['x']
-                molWmix = float(x[0]) * float(molWNH3) + float(x[1]) * float(molWH2O)
-                propl = rp.flsh('ph', in1, in2 - 10*molWmix, _node['x'])
-                propr = rp.flsh('ph', in1, in2 + 10*molWmix, _node['x'])
-                t = (propl['t'] + propr['t']) / 2
-
-                prop = rp.flsh('tp', t, in1, _node['x'])
+                prop = _PHworkaround(_node)
+                print('Workaround for iteration, enthalpy difference {} J/mol*K'.format(in2 - _node['h']))
             else:
                 raise(e)
                 print(node)
@@ -212,7 +228,7 @@ def refpropState(node):
                 print(in1)
                 print(in2)
 
-        except rp.RefpropError as e:
+        except Exception as e:
             print(node)
             raise(e)
 

@@ -125,7 +125,7 @@ class IterateParamHelper:
             self.y.pop(i)
             self.lastPop = i
 
-        if manual is True and abs(self.delta) > 0.25:
+        if manual is True and abs(self.delta) > self.tol:
             # Pre-seed x/y as long as delta is large. This should make
             # the actual iteration later on quicker
             print('Newton')

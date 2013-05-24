@@ -2,6 +2,7 @@ import states
 from component import Component
 import states
 import scipy
+import warnings
 
 class Valve(Component):
 
@@ -142,7 +143,8 @@ class DoubleSplitMix(Component):
         max_y = max(n1['y'], n2['y'])
 
         if not min_y < n3['y'] < max_y:
-            print('Requested y: ' + str(n3['y']) + 'out of bounds!')
+
+            warnings.warn('Requested y: ' + str(n3['y']) + 'out of bounds!', RuntimeWarning)
             print('min: ', min_y, 'max: ', max_y)
             n3['y'] = min(max(min_y, n3['y']), max_y)
             print('Using y: ' + str(n3['y']) + 'instead')

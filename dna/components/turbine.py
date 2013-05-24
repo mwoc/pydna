@@ -1,5 +1,6 @@
 import states
 import component
+import warnings
 
 class Turbine(component.Component):
     def nodes(self,in1,out1):
@@ -39,6 +40,6 @@ class Turbine(component.Component):
         states.state(n2)
 
         if n2['q'] < 0.85:
-            print('Warning: More than 15% moisture fraction at turbine exit!')
+            warnings.warn('More than 15% moisture fraction at turbine exit!', RuntimeWarning)
 
         return self

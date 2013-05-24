@@ -248,7 +248,7 @@ class IterateModel:
             else:
                 currIter.tol = tol
 
-        while abs(maxDelta) > tol and self.i < 30:
+        while abs(maxDelta) > tol and self.i < 35:
 
             #update guesses
             self.updateGuesses(res)

@@ -1,6 +1,7 @@
 import states
 import component
 import scipy
+import warnings
 
 class FlashSep(component.Component):
     def nodes(self,in1,out1,out2):
@@ -26,11 +27,11 @@ class FlashSep(component.Component):
 
         if flowFrac <= 0:
             flowFrac = 0
-            print("Warning: Saturated liquid into separator")
+            warnings.warn('Saturated liquid into separator!', RuntimeWarning)
 
         if flowFrac >= 1:
             flowFrac = 1
-            print("Warning: Saturated vapour into separator")
+            warnings.warn('Saturated vapour into separator!', RuntimeWarning)
 
         n2['mdot'] = flowFrac * n1['mdot']
         n3['mdot'] = (1-flowFrac) * n1['mdot']
