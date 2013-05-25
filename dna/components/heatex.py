@@ -133,7 +133,7 @@ class PinchCalc:
                 return result['pinch']
 
             if len(currIter.x) > 0:
-                dT_left = currIter.optimize(dT_left, manual=False)
+                dT_left = currIter.optimize(dT_left, manual=True)
             else:
                 if side == 1:
                     dT_left = -dTmin
@@ -225,6 +225,8 @@ class PinchHex(component.Component):
         n3 = n['i'][1]
         n4 = n['o'][1]
 
+        if n1['t'] < n3['t']:
+            raise ValueError(self.name + " - cold inlet has higher temperature than hot inlet, this is not possible")
 
         # Find states for all known inputs:
         states.state(n1) # Hot inlet

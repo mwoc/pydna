@@ -125,9 +125,9 @@ class IterateParamHelper:
             self.y.pop(i)
             self.lastPop = i
 
-        print('x = ', self.x)
-        print('y = ', self.y)
-        print('curr = ', currVal)
+        #print('x = ', self.x)
+        #print('y = ', self.y)
+        #print('curr = ', currVal)
         if manual is True and abs(self.delta) > self.tol:
             # Pre-seed x/y as long as delta is large. This should make
             # the actual iteration later on quicker
@@ -136,10 +136,16 @@ class IterateParamHelper:
                 # Be extra careful for low values
                 newVal = currVal + 0.1 * self.delta
             else:
-                newVal = currVal + 0.5 * self.delta
+                if len(self.x) > 1:
+                    z = np.polyfit([self.x[-2], self.x[-1]], [self.y[-2], self.y[-1]], 1)
+                    p = np.poly1d(z)
 
-            print('new = ', newVal)
-            #newVal = currVal + 0.5 * self.delta
+                    # Find zero
+                    newVal = scipy.optimize.newton(p, currVal)
+                else:
+                    newVal = currVal + 0.5 * self.delta
+
+            #print('new = ', newVal)
 
             if len(self.x) > 3 and self.hasCleared is False:
                 self.hasCleared = True
@@ -152,7 +158,7 @@ class IterateParamHelper:
             newVal = self.iterate(currVal, maxOrder = 2)
         else:
             print('Newton backup')
-            print(currVal)
+            #print(currVal)
             if currVal < 1:
                 # Be extra careful for low values
                 newVal = currVal + 0.1 * self.delta
