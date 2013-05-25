@@ -120,7 +120,7 @@ class PinchCalc:
 
         # Tolerance of 0.01 K is close enough
         # do NOT alter convergence rate parameter. Too high value breaks design
-        while abs(delta) > tol and abs(convergence) > 0.0005 and  i < 20:
+        while abs(delta) > tol and  i < 20:
             # Make local copies of input
             _n1 = self.n1.copy()
             _n2 = self.n2.copy()
@@ -132,21 +132,22 @@ class PinchCalc:
                 result['pinch'] = self.check(_n1, _n2, _n3, _n4)
                 return result['pinch']
 
-            dT_left = dTmin
-
-            if len(currIter.x) > 1:
-                convergence = currIter.y[-2] - currIter.y[-1]
-
+            if len(currIter.x) > 0:
                 dT_left = currIter.optimize(dT_left, manual=False)
-
-            if len(currIter.x) == 1:
-                # For fast iteration, be sure to swing far from 0 on both sides
-                print(dT_left, delta)
-                dT_left = dT_left + delta
+            else:
+                if side == 1:
+                    dT_left = -dTmin
+                else:
+                    dT_left = dTmin
 
             if side == 1:
                 # Side 1 is hot side, 1 and 4
-                _n4['t'] = _n1['t'] - dT_left
+                _n4['t'] = _n1['t'] + dT_left
+
+                if _n4['t'] > _n1['t']:
+                    _n4['t'] = _n1['t'] - 2*dTmin
+                    dT_left = -2*dTmin
+
                 states.state(_n4)
 
                 _n2['h'] = (_n1['h'] * _n1['mdot'] - (_n3['mdot'] * (_n4['h'] - _n3['h']))) / _n1['mdot']
@@ -159,17 +160,15 @@ class PinchCalc:
                 _n2['t'] = _n3['t'] + dT_left
                 states.state(_n2)
 
+                if _n2['t'] < _n3['t']:
+                    _n2['t'] = _n3['t'] - dTmin
+                    dT_left = dTmin
+
                 _n4['h'] = (_n3['h'] * _n3['mdot'] + (_n1['mdot'] * (_n1['h'] - _n2['h']))) / _n3['mdot']
                 states.state(_n4)
 
                 # Update looping parameters
                 delta = _n1['t'] - (_n4['t'] + dTmin)
-
-            # currIter.delta = delta # commented out to prevent IterateParamHelper from guessing
-            currIter.x.append(dT_left)
-            currIter.y.append(delta)
-
-            i = i + 1
 
             # Only accept positive delta for internal pinch calculation
             if delta >= 0 - tol:
@@ -183,11 +182,13 @@ class PinchCalc:
                     print(e)
                     print('Next')
                 else:
-                    # Calculation succeeded. external delta is not valid anymore,
-                    # store internal delta instead:
-                    currIter.y.pop()
+                    # Calculation succeeded
                     delta = result['pinch']['dTmin'] - dTmin
-                    currIter.y.append(delta)
+
+            currIter.delta = delta # commented out to prevent IterateParamHelper from guessing
+            currIter.append(dT_left, delta)
+
+            i = i + 1
 
             print('Iteration: ', i, '. Residual: ', currIter.y[-1])
 

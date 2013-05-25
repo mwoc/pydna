@@ -125,16 +125,20 @@ class IterateParamHelper:
             self.y.pop(i)
             self.lastPop = i
 
+        print('x = ', self.x)
+        print('y = ', self.y)
+        print('curr = ', currVal)
         if manual is True and abs(self.delta) > self.tol:
             # Pre-seed x/y as long as delta is large. This should make
             # the actual iteration later on quicker
             print('Newton')
-            if currVal < 1:
+            if abs(currVal) < 1:
                 # Be extra careful for low values
                 newVal = currVal + 0.1 * self.delta
             else:
                 newVal = currVal + 0.5 * self.delta
 
+            print('new = ', newVal)
             #newVal = currVal + 0.5 * self.delta
 
             if len(self.x) > 3 and self.hasCleared is False:

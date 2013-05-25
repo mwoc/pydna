@@ -42,7 +42,9 @@ cond['Nseg'] = 11
 cond['Nseg_con'] = 1
 
 # Handle command line options
+cmdLine = False
 if len(sys.argv) > 1:
+    cmdLine = True
     _args = sys.argv.copy()
     _args.pop(0)
     optlist, args = getopt.getopt(_args, '', ['pressure=', 'y-tur='])
@@ -74,6 +76,7 @@ except KeyboardInterrupt:
     print('Halted execution..')
     model = runner.lastRun
 finally:
+    print(cond)
     #eff = model.result['eff']
 
     simname = 'm3i-p{:.2f}-y{:.2f}'.format(cond['p_hi'], cond['molefrac_tur'])
@@ -84,32 +87,29 @@ finally:
     # Export log
     runner.export('m3_identical/'+simname+'-log')
 
-print('Plotting...')
-com = model.result
-for i in com:
-    if iterable(com[i]) and 'Th' in com[i]:
+if not cmdLine:
+    print('Plotting...')
+    com = model.result
+    for i in com:
+        if iterable(com[i]) and 'Th' in com[i]:
 
-        curr = com[i]
+            curr = com[i]
 
-        # Efficiency calculation seems inaccurate. eff: {2:.2%},
-        _title = '{0} - Pinch: {1:.2f}, Q: {3:.2f} [kW]'.format(i.capitalize(), curr['dTmin'], curr['eff'], curr['Q'])
+            # Efficiency calculation seems inaccurate. eff: {2:.2%},
+            _title = '{0} - Pinch: {1:.2f}, Q: {3:.2f} [kW]'.format(i.capitalize(), curr['dTmin'], curr['eff'], curr['Q'])
 
-        x = linspace(0,1,len(curr['Th']))
-        miny = round_down(min(min(curr['Tc']),min(curr['Th']))-1,10)
-        maxy = round_up(max(max(curr['Tc']),max(curr['Th']))+1,10)
-        plt.plot(x, curr['Th'], 'r->',label='Hot')
-        plt.plot(x, curr['Tc'], 'b-<',label='Cold')
-        plt.xlabel('Location in HEX')
-        plt.ylabel(r'Temperature [$^\circ$C]')
-        plt.title(_title)
-        plt.ylim(miny,maxy)
-        plt.grid(True)
-        plt.savefig('../output/m3_identical/m3i-pinch_' + str(i) + '.png')
-        plt.close()
-
-    else:
-        # Do nothing
-        pass
+            x = linspace(0,1,len(curr['Th']))
+            miny = round_down(min(min(curr['Tc']),min(curr['Th']))-1,10)
+            maxy = round_up(max(max(curr['Tc']),max(curr['Th']))+1,10)
+            plt.plot(x, curr['Th'], 'r->',label='Hot')
+            plt.plot(x, curr['Tc'], 'b-<',label='Cold')
+            plt.xlabel('Location in HEX')
+            plt.ylabel(r'Temperature [$^\circ$C]')
+            plt.title(_title)
+            plt.ylim(miny,maxy)
+            plt.grid(True)
+            plt.savefig('../output/m3_identical/m3i-pinch_' + str(i) + '.png')
+            plt.close()
 
 # Plot
 print('Finished execution')

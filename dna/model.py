@@ -219,7 +219,7 @@ class IterateModel:
 
         # Prepare iterator helpers
         deltas = []
-        tol = 0.01
+        tol = 0.05
 
         for res_index, currRes in enumerate(res):
 
@@ -248,7 +248,7 @@ class IterateModel:
             else:
                 currIter.tol = tol
 
-        while abs(maxDelta) > tol and self.i < 35:
+        while abs(maxDelta) > tol and self.i < 40:
 
             #update guesses
             self.updateGuesses(res)

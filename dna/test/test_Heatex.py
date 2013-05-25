@@ -17,19 +17,19 @@ class HeatexTest(model.DnaModel):
 
         self.nodes[1].update({
             'media': 'kalina',
-            'y': 0.5,
-            't': 77.53,
-            'p': 0.857,
-            'mdot': 7.527
+            'y': 0.8,
+            't': 148.95,
+            'p': 4.76466,
+            'mdot': 5.5865
         })
 
 
         self.nodes[3].update({
             'media': 'kalina',
-            'y': 0.5,
-            't': 65,
-            'p': 100,
-            'mdot': 7.49
+            'y': 0.8,
+            't': 48.884,
+            'p': 140,
+            'mdot': 5.5374
         })
 
 
