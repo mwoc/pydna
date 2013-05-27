@@ -28,6 +28,16 @@ class IterateParamHelper:
 
         return self
 
+    def careful(self, currVal):
+        print('Careful newton')
+
+        if abs(self.delta) > 0.1 * abs(currVal):
+            newVal = currVal + 0.1 * self.delta
+        else:
+            newVal = currVal + 0.5 * self.delta
+
+        return newVal
+
     def optimize(self, currVal, manual = True):
 
         newVal = False
@@ -51,19 +61,18 @@ class IterateParamHelper:
             self.lastPop = i
 
         if abs(currVal) < 1 and abs(self.delta) > 0.1 * abs(currVal):
-            print('Careful newton')
             # Be extra careful for deviations larger than 10%
-            newVal = currVal + 0.1 * self.delta
+            newVal = self.careful(currVal)
         else:
-            print('Normal newton')
-            # Only use polyfit when converging fast
-            if len(self.x) > 1 and (manual is True or 1.95*abs(self.y[-1]) <= abs(self.y[-2])):
+            # Only use polyfit when converging reasonably fast
+            if len(self.x) > 1 and (manual is True or 1.5*abs(self.y[-1]) <= abs(self.y[-2])):
+                print('Normal newton')
                 z = np.polyfit([self.x[-2], self.x[-1]], [self.y[-2], self.y[-1]], 1)
                 p = np.poly1d(z)
 
                 # Find zero
                 newVal = scipy.optimize.newton(p, currVal)
             else:
-                newVal = currVal + 0.5 * self.delta
+                newVal = self.careful(currVal)
 
         return newVal

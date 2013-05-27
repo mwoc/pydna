@@ -164,9 +164,9 @@ class MyModel(model.DnaModel):
         # Fixed guess
         self.nodes['6.1']['t'] = min(90, self.nodes[2]['t'])
 
-        if cond['t_node6'] is not False:
+        if cond['h_node6'] is not False:
             # Minor corrections might be needed after first run
-            self.nodes['6.1']['t'] = cond['t_node6']
+            self.nodes['6.1']['h'] = cond['h_node6']
 
         # Several fixed guesses:
         self.nodes[7]['t'] = t_sat + 10 # < Chosen to satisfy pinch
@@ -299,10 +299,10 @@ class MyModel(model.DnaModel):
 
         # This means: match n6[t] and n6.1[t]
         node6 = {
-            'cond': 't_node6',
-            'value': self.nodes[6]['t'],
-            'alter': self.nodes['6.1']['t'],
-            'range': [self.nodes['6.1']['t']-5, self.nodes[4]['t']+5]
+            'cond': 'h_node6',
+            'value': self.nodes[6]['h'],
+            'alter': self.nodes['6.1']['h'],
+            'range': [self.nodes[8]['h']-5, self.nodes[4]['h']+5]
         }
 
         # FIXME: This residual is not working accurately, it could be as much

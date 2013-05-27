@@ -59,7 +59,7 @@ if len(sys.argv) > 1:
 # Simulation guesses (iterate!!):
 cond['molefrac_lpp'] = cond['molefrac_tur'] * 2/3
 
-cond['t_node6'] = False # That means no start value is given
+cond['h_node6'] = False # That means no start value is given
 cond['t_node15.1'] = False
 cond['t_node16.1'] = False
 cond['t_node44.1'] = False
@@ -90,7 +90,7 @@ finally:
     # Export log
     runner.export('m3_identical/'+simname+'-log')
 
-if not cmdLine:
+if True:#not cmdLine:
     print('Plotting...')
     com = model.result
     for i in com:

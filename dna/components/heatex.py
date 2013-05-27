@@ -134,7 +134,7 @@ class PinchCalc:
             _n3 = self.n3.copy()
             _n4 = self.n4.copy()
 
-            if _n1['mdot'] <= 0 or _n3['mdot'] <= 0:
+            if not find_mdot and (_n1['mdot'] <= 0 or _n3['mdot'] <= 0):
                 # No iteration possible, early return
                 result['pinch'] = self.check(_n1, _n2, _n3, _n4)
                 return result['pinch']
@@ -169,7 +169,7 @@ class PinchCalc:
 
                 # Update looping parameters
                 delta = _n2['t'] - (_n3['t'] + dTmin)
-            else:
+            elif side == 2:
                 # Side 2 is cold side, 2 and 3
                 _n2['t'] = _n3['t'] - dT_left
 
@@ -191,6 +191,37 @@ class PinchCalc:
 
                 # Update looping parameters
                 delta = _n1['t'] - (_n4['t'] + dTmin)
+            else:
+                # Assume one side is fixed, depending on if find_mdot1 or find_mdot3 is set
+                if find_mdot1:
+                    # t2 and m1 unknown
+                    _n2['t'] = _n3['t'] - dT_left
+
+                    if _n2['t'] < _n3['t']:
+                        _n2['t'] = _n3['t'] - dTmin
+                        dT_left = dTmin
+
+                    if 'tmin' in _n1 and _n2['t'] < _n1['tmin']:
+                        _n2['t'] = _n1['tmin']
+                        dT_left = _n3['t'] - _n2['t']
+
+                    states.state(_n2)
+
+                    _n1['mdot'] = ((_n4['h'] - _n3['h']) * _n3['mdot']) / (_n1['h'] - _n2['h'])
+
+                    delta = _n1['t'] - (_n4['t'] + dTmin)
+
+                elif find_mdot3:
+                    # t4 and m3 unknown
+                    raise Exception('Not implemented')
+                    #n3['mdot'] = ((n1['h'] - n2['h']) * n1['mdot']) / (n4['h'] - n3['h'])
+                else:
+                    print(_n1)
+                    print(_n2)
+                    print(_n3)
+                    print(_n4)
+
+                    raise Exception('Wrong unknowns')
 
             # Only accept positive delta for internal pinch calculation
             if delta >= 0 - tol:
@@ -361,14 +392,32 @@ class PinchHex(component.Component):
         elif not 't' in n4 and not 'q' in n4:
             # Calculate T4 for given mass flow rates and other temperatures
             calc = True
-            n4['h'] = (n3['h'] * n3['mdot'] + (n1['mdot'] * (n1['h'] - n2['h']))) / n3['mdot']
-            states.state(n4)
+
+            if 'mdot' in n1 and 'mdot' in n3:
+                n4['h'] = (n3['h'] * n3['mdot'] + (n1['mdot'] * (n1['h'] - n2['h']))) / n3['mdot']
+                states.state(n4)
+            else:
+                n1['mdot'] = Q / (n1['h'] - n2['h'])
+
+                try:
+                    pinch = pincher.iterate(side = False)
+                except Exception as e:
+                    raise(e)
 
         elif not 't' in n2 and not 'q' in n2:
             # Calculate T2 for given mass flow rates and other temperatures
             calc = True
-            n2['h'] = (n1['h'] * n1['mdot'] - (n3['mdot'] * (n4['h'] - n3['h']))) / n1['mdot']
-            states.state(n2)
+
+            if 'mdot' in n1 and 'mdot' in n3:
+                n2['h'] = (n1['h'] * n1['mdot'] - (n3['mdot'] * (n4['h'] - n3['h']))) / n1['mdot']
+                states.state(n2)
+            else:
+                n3['mdot'] = Q / (n4['h'] - n3['h'])
+
+                try:
+                    pinch = pincher.iterate(side = False)
+                except Exception as e:
+                    raise(e)
 
         if not 'mdot' in n3:
             # Calculate m3 for given m1 or Q, and given temperatures

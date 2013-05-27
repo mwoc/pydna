@@ -65,8 +65,8 @@ cond['molefrac_n44'] = cond['molefrac_stor']
 cond['h_node6'] = False # That means no start value is given
 cond['t_node15.1'] = False
 cond['t_node44.1'] = False
-cond['t_node18.1'] = 80
-cond['t_node47.1'] = 80
+cond['t_node18.1'] = 40
+cond['t_node47.1'] = 40
 
 # Pass initial conditions to model and run/iterate it
 try:

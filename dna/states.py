@@ -27,9 +27,15 @@ def state(node):
     use_rp = True
 
     if 'media' in node:
-        usermedia = {'hitecxl': 1.447, 'hitec': 1.5617}
+        usermedia = {
+            'hitecxl': {'cp': 1.447, 'tmin': 130, 'tmax': 490},
+            'hitec': {'cp': 1.5617, 'tmin': 180, 'tmax': 560}
+        }
+
         if node['media'] in usermedia:
-            node['cp'] = usermedia[node['media']]
+            node['cp'] = usermedia[node['media']]['cp']
+            node['tmin'] = usermedia[node['media']]['tmin']
+            node['tmax'] = usermedia[node['media']]['tmax']
             use_rp = False
 
     if use_rp:

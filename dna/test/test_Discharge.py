@@ -21,18 +21,18 @@ class DischargeTest(model.DnaModel):
             'p': 1
         })
 
-        self.nodes[2]['t'] = 130
+        #self.nodes[2]['t'] = 150
 
         self.nodes[3].update({
             'media': 'kalina',
-            'y': 0.95,
-            't': 85,
+            'y': 0.3,
+            't': 54.16,
             'p': 100
         })
 
         self.nodes[4]['t'] = 440
 
-        heatex.calc(Nseg = 37, dTmin = 5, Q = 12500)
+        heatex.calc(Nseg = 11, dTmin = 5, Q = 12500)
 
         return self
 

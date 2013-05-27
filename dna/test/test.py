@@ -16,15 +16,15 @@ sys.path.append(_filename)
 #TurbineTest({}).run().analyse()
 
 # Heatex
-from test_Heatex import HeatexTest
-hx = HeatexTest({}).run().analyse().plot()
+#from test_Heatex import HeatexTest
+#hx = HeatexTest({}).run().analyse().plot()
 
 # Storage
 #from test_Storage import StorageTest
 #hx = StorageTest({}).run().analyse().plot()
 
-#from test_Discharge import DischargeTest
-#hx = DischargeTest({}).run().analyse().plot()
+from test_Discharge import DischargeTest
+hx = DischargeTest({}).run().analyse().plot()
 
 #from test_ThreeStepDischarge import ThreeStepDischargeTest
 #hx = ThreeStepDischargeTest({}).run().analyse().plot()
