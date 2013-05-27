@@ -106,7 +106,7 @@ class IterateParamHelper:
 
         newVal = False
 
-        if len(self.x) > 5:
+        if len(self.x) > 5 and manual is False:
             bmin = min(self.y)
             bmax = max(self.y)
 
@@ -128,7 +128,7 @@ class IterateParamHelper:
         #print('x = ', self.x)
         #print('y = ', self.y)
         #print('curr = ', currVal)
-        if manual is True and abs(self.delta) > self.tol:
+        if abs(self.delta) > self.tol:
             # Pre-seed x/y as long as delta is large. This should make
             # the actual iteration later on quicker
             print('Newton')
@@ -136,7 +136,8 @@ class IterateParamHelper:
                 # Be extra careful for low values
                 newVal = currVal + 0.1 * self.delta
             else:
-                if len(self.x) > 1:
+                # Only use polyfit when converging fast
+                if len(self.x) > 1 and (manual is True or 1.95*abs(self.y[-1]) <= abs(self.y[-2])):
                     z = np.polyfit([self.x[-2], self.x[-1]], [self.y[-2], self.y[-1]], 1)
                     p = np.poly1d(z)
 
@@ -147,7 +148,7 @@ class IterateParamHelper:
 
             #print('new = ', newVal)
 
-            if len(self.x) > 3 and self.hasCleared is False:
+            if False:#len(self.x) > 3 and self.hasCleared is False:
                 self.hasCleared = True
                 self.x = []
                 self.y = []

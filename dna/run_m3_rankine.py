@@ -4,7 +4,7 @@ import collections
 from numpy import linspace
 import matplotlib.pyplot as plt
 
-import m3_rs_t_identical
+import m3_rs_t_rankine
 from model import IterateModel
 
 def round_down(num, divisor):
@@ -23,8 +23,6 @@ cond = {}
 cond['t_steam'] = 450
 cond['p_hi'] = 100
 cond['t_con'] = 20
-
-cond['molefrac_tur'] = 0.5
 
 cond['nu_is'] = 0.8
 cond['nu_mech'] = 0.98
@@ -47,29 +45,22 @@ if len(sys.argv) > 1:
     cmdLine = True
     _args = sys.argv.copy()
     _args.pop(0)
-    optlist, args = getopt.getopt(_args, '', ['pressure=', 'y-tur='])
+    optlist, args = getopt.getopt(_args, '', ['pressure='])
 
     for i, opt in enumerate(optlist):
 
         if opt[0] == '--pressure':
             cond['p_hi'] = float(opt[1])
-        elif opt[0] == '--y-tur':
-            cond['molefrac_tur'] = float(opt[1])
 
 # Simulation guesses (iterate!!):
-cond['molefrac_lpp'] = cond['molefrac_tur'] * 2/3
 
-cond['t_node6'] = False # That means no start value is given
-cond['t_node15.1'] = False
-cond['t_node16.1'] = False
-cond['t_node44.1'] = False
-cond['t_node45.1'] = False
+cond['h_node6'] = False # That means no start value is given
 cond['t_node18.1'] = 80
 cond['t_node47.1'] = 80
 
 # Pass initial conditions to model and run/iterate it
 try:
-    runner = IterateModel(m3_rs_t_identical.MyModel, cond)
+    runner = IterateModel(m3_rs_t_rankine.MyModel, cond)
     model = runner.run()
 except KeyboardInterrupt:
     # If it takes too long, we can also just return the last iteration
@@ -82,15 +73,15 @@ finally:
     print(cond)
     #eff = model.result['eff']
 
-    simname = 'm3i-p{:.2f}-y{:.2f}'.format(cond['p_hi'], cond['molefrac_tur'])
+    simname = 'm3r-p{:.2f}'.format(cond['p_hi'])
 
     # Export result
-    model.export('m3_identical/'+simname)
+    model.export('m3_rankine/'+simname)
 
     # Export log
-    runner.export('m3_identical/'+simname+'-log')
+    runner.export('m3_rankine/'+simname+'-log')
 
-if not cmdLine:
+if True:#not cmdLine:
     print('Plotting...')
     com = model.result
     for i in com:
@@ -111,7 +102,7 @@ if not cmdLine:
             plt.title(_title)
             plt.ylim(miny,maxy)
             plt.grid(True)
-            plt.savefig('../output/m3_identical/m3i-pinch_' + str(i) + '.png')
+            plt.savefig('../output/m3_rankine/m3i-pinch_' + str(i) + '.png')
             plt.close()
 
 # Plot

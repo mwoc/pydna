@@ -22,23 +22,11 @@ class MyModel(model.DnaModel):
         self.addComponent(com.Mixer, 'mixprh2').nodes(5, 52, 6)
 
         # Note: get node 6 right with iteration
-        self.addComponent(com.PinchHex, 'recup').nodes('6.1', 7, 21, 22)
-
-        self.addComponent(com.Mixer, 'mixer1').nodes(7, 29, 8)
-
-        self.addComponent(com.PinchHex, 'lpcon').nodes(8, 9, 63, 64)
+        self.addComponent(com.PinchHex, 'lpcon').nodes('6.1', 9, 63, 64)
 
         self.addComponent(com.Pump, 'lppump').nodes(9, 10)
 
-        self.addComponent(com.Splitter, 'split1').nodes(10, 11, 21)
-
-        self.addComponent(com.Mixer, 'mixer2').nodes(11, 30, 12)
-
-        self.addComponent(com.PinchHex, 'hpcon').nodes(12, 13, 66, 67)
-
-        self.addComponent(com.Pump, 'hppump').nodes(13, 14)
-
-        self.addComponent(com.Splitter, 'split2').nodes(14, 16, 45)
+        self.addComponent(com.Splitter, 'split2').nodes(10, 17, 46)
 
         ### Receiver loop
 
@@ -52,22 +40,6 @@ class MyModel(model.DnaModel):
 
         self.addComponent(com.Mixer,'mixtur').nodes(19, 48, 1)
 
-        ### Distillation loop + prheat1 ###
-
-        self.addComponent(com.FlashSep, 'flashsep').nodes(22, 30, 23)
-
-        self.addComponent(com.Splitter, 'splitprh1').nodes(23, 24, 26)
-
-        # Note: get node 16 right with iteration
-        self.addComponent(com.PinchHex, 'prheat1r').nodes(24, 25, '16.1', 17)
-
-        # Note: get node 43 right with iteration
-        self.addComponent(com.PinchHex, 'prheat1s').nodes(26, 27, '45.1', 46)
-
-        self.addComponent(com.Mixer, 'mixerprh1').nodes(25, 27, 28)
-
-        self.addComponent(com.Valve, 'valve1').nodes(28, 29)
-
         return self
 
     def run(self):
@@ -77,8 +49,8 @@ class MyModel(model.DnaModel):
         be sure to copy() results past the skipped nodes manually
         '''
 
-        # Node 6 already defined. Iteration might be needed
-        # Node 15 already defined. Iteration might be needed
+        # FIXME: Do not need preheater as turbine outlet is cold
+        # FIXME2: Pinch in storage is not satisfied at all
 
         # IMPORTANT: mass flow in distillation loop is calculated by recuperator. To prevent iteration
         # from setting distillation to 0, the heat transfer should be fixed and not depend on fluid properties.
@@ -93,25 +65,18 @@ class MyModel(model.DnaModel):
         frac_rcvr = 1 - frac_stor
 
         # Simulation params
-        t_sat = cond['t_con'] + cond['pinch_con']
+        t_sat = cond['t_con'] + cond['pinch_con'] + cond['dT_con']
         p_lo = states.state({
-            'media': 'kalina',
-            'y': cond['molefrac_lpp'],
-            't': t_sat,
-            'q': 0
-        })['p']
-
-        p_me = states.state({
-            'media': 'kalina',
-            'y': cond['molefrac_tur'],
+            'media': 'water',
+            'y': 0,
             't': t_sat,
             'q': 0
         })['p']
 
         # Receiver conditions:
         self.nodes['18.1'].update({
-            'media': 'kalina',
-            'y': cond['molefrac_tur'],
+            'media': 'water',
+            'y': 0,
             'p': cond['p_hi'],
             't': cond['t_node18.1']
         })
@@ -128,8 +93,8 @@ class MyModel(model.DnaModel):
         self.nodes[62]['t'] = 130
 
         self.nodes['47.1'].update({
-            'media': 'kalina',
-            'y': cond['molefrac_tur'],
+            'media': 'water',
+            'y': 0,
             'p': cond['p_hi'],
             't': cond['t_node47.1']
         })
@@ -144,6 +109,8 @@ class MyModel(model.DnaModel):
 
         components['turbine'].calc(cond['nu_is'])
 
+        print(self.nodes[2])
+
         self.nodes[51]['mdot'] = self.nodes[2]['mdot'] * frac_stor
 
         components['splitprh2'].calc()
@@ -151,72 +118,17 @@ class MyModel(model.DnaModel):
         # Fixing state of node 6,7,21,22 as balancing point of model
         self.nodes['6.1'].update({
             'media': self.nodes[2]['media'],
-            'y': self.nodes[2]['y'],
+            'y': 0,
             'mdot': self.nodes[2]['mdot'],
             'p': self.nodes[2]['p']
         })
-        self.nodes[21].update({
-            'media': 'kalina',
-            'y': cond['molefrac_lpp'],
-            'p': p_me
-        })
 
         # Fixed guess
-        self.nodes['6.1']['t'] = min(90, self.nodes[2]['t'])
+        self.nodes['6.1']['t'] = t_sat + cond['pinch_hex'] + 1
 
-        if cond['t_node6'] is not False:
+        if cond['h_node6'] is not False:
             # Minor corrections might be needed after first run
-            self.nodes['6.1']['t'] = cond['t_node6']
-
-        # Several fixed guesses:
-        self.nodes[7]['t'] = t_sat + 10 # < Chosen to satisfy pinch
-        self.nodes[21]['t'] = t_sat
-        self.nodes[22]['t'] = min(80, self.nodes['6.1']['t'] - cond['pinch_hex']) # Not raise temperature too far
-
-        components['recup'].calc(cond['Nseg'], cond['pinch_hex'])
-
-        components['flashsep'].calc()
-
-        self.nodes[26]['mdot'] = self.nodes[23]['mdot'] * frac_stor
-
-        components['splitprh1'].calc()
-
-        # Prheat1r
-        self.nodes['16.1'].update({
-            'media': self.nodes[19]['media'],
-            'y': cond['molefrac_tur'],
-            'mdot': self.nodes[19]['mdot'],
-            'p': self.nodes[19]['p']
-        })
-        # T probably close to maximum saturation temperature of stor/rcvr
-        self.nodes['16.1']['t'] = t_sat
-
-        if cond['t_node16.1'] is not False:
-            self.nodes['16.1']['t'] = cond['t_node16.1']
-
-        components['prheat1r'].calc(cond['Nseg'], cond['pinch_hex'])
-
-        # Prheat1s
-        self.nodes['45.1'].update({
-            'media': self.nodes[48]['media'],
-            'y': cond['molefrac_tur'],
-            'mdot': self.nodes[48]['mdot'],
-            'p': self.nodes[48]['p']
-        })
-        # T probably close to maximum saturation temperature of stor/rcvr
-        self.nodes['45.1']['t'] = t_sat
-
-        if cond['t_node16.1'] is not False:
-            self.nodes['45.1']['t'] = cond['t_node16.1']
-
-        components['prheat1s'].calc(cond['Nseg'], cond['pinch_hex'])
-
-        components['mixerprh1'].calc()
-
-        self.nodes[29]['p'] = p_lo   # Have to tell valve how far to drop pressure
-        components['valve1'].calc()
-
-        components['mixer1'].calc()
+            self.nodes['6.1']['h'] = cond['h_node6']
 
         self.nodes[63].update({
             'media': 'water',
@@ -230,39 +142,16 @@ class MyModel(model.DnaModel):
         self.nodes[9]['q'] = 0
         components['lpcon'].calc(cond['Nseg_con'], cond['pinch_con'])
 
-        self.nodes[10]['p'] = p_me   # Have to tell pump how far to increase pressure
+        self.nodes[10]['p'] = cond['p_hi']   # Have to tell pump how far to increase pressure
         components['lppump'].calc()
 
-        components['split1'].calc()
-
-        components['mixer2'].calc()
-
-        self.nodes[66].update({
-            'media': 'water',
-            'y': 0,
-            'p': 2,
-            't': cond['t_con']
-        })
-
-        self.nodes[67]['t'] = cond['t_con'] + cond['dT_con']
-
-        self.nodes[13]['q'] = 0
-        components['hpcon'].calc(cond['Nseg_con'], cond['pinch_con'])
-
-        self.nodes[14]['p'] = self.nodes[19]['p']   # Have to tell pump how far to increase pressure
-        components['hppump'].calc()
-
-        self.nodes[16].update({
+        self.nodes[17].update({
             'mdot': self.nodes[19]['mdot']
         })
 
         components['split2'].calc()
 
-        ### Receiver loop ###
-
         components['prheat2r'].calc(cond['Nseg'], cond['pinch_hex'])
-
-        ### Storage loop ###
 
         components['prheat2s'].calc(cond['Nseg'], cond['pinch_hex'])
 
@@ -288,21 +177,12 @@ class MyModel(model.DnaModel):
         # Convenience:
         t_sat = self.cond['t_con'] + self.cond['pinch_con']
 
-        # This means: match molefrac_lpp and n8[y]
-        res.append({
-            'cond': 'molefrac_lpp',
-            'value': self.nodes[8]['y'],
-            'alter': self.cond['molefrac_lpp'],
-            'range': [0, self.nodes[1]['y']],
-            'tol': 0.001
-        })
-
         # This means: match n6[t] and n6.1[t]
         node6 = {
-            'cond': 't_node6',
-            'value': self.nodes[6]['t'],
-            'alter': self.nodes['6.1']['t'],
-            'range': [self.nodes['6.1']['t']-5, self.nodes[4]['t']+5]
+            'cond': 'h_node6',
+            'value': self.nodes[6]['h'],
+            'alter': self.nodes['6.1']['h'],
+            'range': [self.nodes[9]['h'], self.nodes[2]['h']]
         }
 
         # FIXME: This residual is not working accurately, it could be as much
@@ -310,21 +190,12 @@ class MyModel(model.DnaModel):
 
         res.append(node6)
 
-        # This means: match n16.1[t] and n16[t]
-
-        res.append({
-            'cond': 't_node16.1',
-            'value': self.nodes[16]['t'],
-            'alter': self.nodes['16.1']['t'],
-            'range': [t_sat-5, self.nodes[16]['t']+5]
-        })
-
         # Alter 18.1.t until it matches 18.t
         res.append({
             'cond': 't_node18.1',
             'value': self.nodes[18]['t'],
             'alter': self.cond['t_node18.1'],
-            'range': [self.nodes[16]['t']-5, self.nodes[2]['t']+5]
+            'range': [self.nodes[17]['t']-5, self.nodes[2]['t']+5]
         })
 
         # Alter 45.1.t until it matches 45.t
@@ -351,9 +222,6 @@ class MyModel(model.DnaModel):
 
         # Lppump
         W_in = W_in + self.nodes[9]['mdot'] * (self.nodes[10]['h'] - self.nodes[9]['h'])
-
-        # Hppump r / s
-        W_in = W_in + (1 / self.cond['nu_pump']) * self.nodes[13]['mdot'] * (self.nodes[14]['h'] - self.nodes[13]['h'])
 
         # Turbine
         W_out = W_out + self.cond['nu_mech'] * (self.nodes[1]['mdot'] * (self.nodes[1]['h'] - self.nodes[2]['h']))

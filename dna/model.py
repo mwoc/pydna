@@ -125,7 +125,7 @@ class IterateModel:
                 print('delta = ', currIter.delta)
 
                 # Get new guess:
-                self.cond[currRes['cond']] = currIter.optimize(currRes['alter'])
+                self.cond[currRes['cond']] = currIter.optimize(currRes['alter'], manual = False)
 
                 # From here on self.cond[currRes['cond']] is guaranteed available, so use it
 

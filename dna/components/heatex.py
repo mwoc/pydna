@@ -77,7 +77,11 @@ class PinchCalc:
 
         Q = n1['mdot'] * (n1['h'] - n2['h'])
 
-        eff = Q / Q_max
+        if Q > 0 and Q_max > 0:
+            # Guard against division by zero
+            eff = Q / Q_max
+        else:
+            eff = 0
 
         return {'dTmin':dT_pinch, 'Th':Th, 'Tc':Tc, 'percent': pinch_pos / self.Nseg, 'eff': eff, 'Q': Q}
 
@@ -118,6 +122,9 @@ class PinchCalc:
             find_mdot = find_mdot3 = True
             #
 
+        print('n1 = ', self.n1['t'])
+        print('n3 = ', self.n3['t'])
+
         # Tolerance of 0.01 K is close enough
         # do NOT alter convergence rate parameter. Too high value breaks design
         while abs(delta) > tol and  i < 20:
@@ -133,10 +140,10 @@ class PinchCalc:
                 return result['pinch']
 
             if len(currIter.x) > 0:
-                dT_left = currIter.optimize(dT_left, manual=True)
+                dT_left = currIter.optimize(dT_left, manual = True)
             else:
                 if side == 1:
-                    dT_left = -dTmin
+                    dT_left = - 0.25 * (_n1['t'] - _n3['t'])
                 else:
                     dT_left = dTmin
 
@@ -150,22 +157,37 @@ class PinchCalc:
 
                 states.state(_n4)
 
+                print('n4 = ', _n4['t'])
+
                 _n2['h'] = (_n1['h'] * _n1['mdot'] - (_n3['mdot'] * (_n4['h'] - _n3['h']))) / _n1['mdot']
                 states.state(_n2)
+
+                if _n2['t'] < _n3['t']:
+                    print('Pretty sure this should be analysed from side 2')
+
+                print('n2 = ', _n2['t'])
 
                 # Update looping parameters
                 delta = _n2['t'] - (_n3['t'] + dTmin)
             else:
                 # Side 2 is cold side, 2 and 3
-                _n2['t'] = _n3['t'] + dT_left
-                states.state(_n2)
+                _n2['t'] = _n3['t'] - dT_left
 
                 if _n2['t'] < _n3['t']:
                     _n2['t'] = _n3['t'] - dTmin
                     dT_left = dTmin
 
+                states.state(_n2)
+
+                print('n2 = ', _n2['t'])
+
                 _n4['h'] = (_n3['h'] * _n3['mdot'] + (_n1['mdot'] * (_n1['h'] - _n2['h']))) / _n3['mdot']
                 states.state(_n4)
+
+                print('n4 = ', _n4['t'])
+
+                if _n4['t'] > _n1['t']:
+                    print('Pretty sure this should be analysed from side 1')
 
                 # Update looping parameters
                 delta = _n1['t'] - (_n4['t'] + dTmin)
@@ -225,9 +247,6 @@ class PinchHex(component.Component):
         n3 = n['i'][1]
         n4 = n['o'][1]
 
-        if n1['t'] < n3['t']:
-            raise ValueError(self.name + " - cold inlet has higher temperature than hot inlet, this is not possible")
-
         # Find states for all known inputs:
         states.state(n1) # Hot inlet
         states.state(n3) # Cold inlet
@@ -249,27 +268,39 @@ class PinchHex(component.Component):
         if 'cp' in n3:
             n4['cp'] = n3['cp']
 
+        if 'mdot' in n1:
+            n2['mdot'] = n1['mdot']
+
+        if 'mdot' in n3:
+            n4['mdot'] = n3['mdot']
+
+        if n1['t'] < n3['t']:
+            # Act as if this component is bypassed
+            n2['t'] = n1['t']
+            states.state(n2)
+
+            n4['t'] = n3['t']
+            states.state(n4)
+            warnings.warn(self.name + " - cold inlet has higher temperature than hot inlet, this is not possible so setting heat exchange to 0", RuntimeWarning)
+            return self
+
         calc = False
 
-        if 't' in n2 or 'q' in n2:
-            # Quality and temperature in hot fluid cannot increase
-            if 'q' in n2 and n2['q'] >= n1['q']:
-                del n2['q']
-                n2['t'] = n1['t']
+        if 'q' in n2 or 't' in n2:
+            n2h = states.state(n2.copy())['h']
 
-            if 't' in n2 and n2['t'] >= n1['t']:
-                n2['t'] = n1['t']
+            # Enthalpy in hot fluid cannot increase
+            if n2h >= n1['h']:
+                n2['h'] = n1['h']
 
-            states.state(n2) # Hot outlet
+            states.state(n2)
 
         if 't' in n4 or 'q' in n4:
-            # Quality and temperature in cold fluid cannot decrease
-            if 'q' in n4 and n4['q'] <= n3['q']:
-                del n4['q']
-                n4['t'] = n3['t']
+            n4h = states.state(n4.copy())['h']
 
-            if 't' in n4 and n4['t'] <= n3['t']:
-                n4['t'] = n3['t']
+            # Enthalpy in cold fluid cannot decrease
+            if n4h <= n3['h']:
+                n4['h'] = n3['h']
 
             states.state(n4) # Cold outlet
 
@@ -291,14 +322,24 @@ class PinchHex(component.Component):
             else:
                 # First try one side of the HEX
                 try:
-                    pinch = pincher.iterate(side=1)
+                    pinch = pincher.iterate(side = 1)
+                except RuntimeError as e:
+                    print('First side failed, trying second. Reason:')
+                    print(e)
+
+                    # If that failed, try from the other
+                    try:
+                        pinch = pincher.iterate(side = 2)
+                    except refprop.RefpropError as e:
+                        print('Second side iteration also failed.')
+                        raise Exception(e)
                 except refprop.RefpropError as e:
                     print('First side failed, trying second. Reason:')
                     print(e)
 
                     # If that failed, try from the other
                     try:
-                        pinch = pincher.iterate(side=2)
+                        pinch = pincher.iterate(side = 2)
                     except refprop.RefpropError as e:
                         print('Second side iteration also failed.')
                         raise Exception(e)
@@ -306,10 +347,13 @@ class PinchHex(component.Component):
                     print('Convergence failed, trying other side', e)
 
                     try:
-                        pinch = pincher.iterate(side=2)
+                        pinch = pincher.iterate(side = 2)
                     except refprop.RefpropError as e:
                         print('Second side iteration also failed.')
                         raise Exception(e)
+                except Exception as e:
+                    print('Unexpected exception: ', e)
+                    raise(e)
                 finally:
                     print('Pinch - {} - following outlet temperatures found:'.format(self.name))
                     print('T2: ', n2['t'], ' T4: ', n4['t'])
