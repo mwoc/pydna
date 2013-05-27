@@ -62,11 +62,9 @@ cond['molefrac_lpp'] = 0.3
 cond['molefrac_n15'] = cond['molefrac_rcvr']
 cond['molefrac_n44'] = cond['molefrac_stor']
 
-cond['t_node6'] = False # That means no start value is given
+cond['h_node6'] = False # That means no start value is given
 cond['t_node15.1'] = False
-cond['t_node16.1'] = False
 cond['t_node44.1'] = False
-cond['t_node45.1'] = False
 cond['t_node18.1'] = 80
 cond['t_node47.1'] = 80
 

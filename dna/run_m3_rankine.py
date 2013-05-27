@@ -1,7 +1,7 @@
 import sys
 import getopt
 import collections
-from numpy import linspace
+import numpy as np
 import matplotlib.pyplot as plt
 
 import m3_rs_t_rankine
@@ -36,7 +36,7 @@ cond['pinch_hex'] = 5
 cond['pinch_con'] = 4
 cond['pinch_stor'] = 20
 
-cond['Nseg'] = 11
+cond['Nseg'] = 35
 cond['Nseg_con'] = 1
 
 # Handle command line options
@@ -89,10 +89,13 @@ if True:#not cmdLine:
 
             curr = com[i]
 
+            dT = np.array(curr['Th']) - np.array(curr['Tc'])
+            print('dT = ', dT)
+
             # Efficiency calculation seems inaccurate. eff: {2:.2%},
             _title = '{0} - Pinch: {1:.2f}, Q: {3:.2f} [kW]'.format(i.capitalize(), curr['dTmin'], curr['eff'], curr['Q'])
 
-            x = linspace(0,1,len(curr['Th']))
+            x = np.linspace(0,1,len(curr['Th']))
             miny = round_down(min(min(curr['Tc']),min(curr['Th']))-1,10)
             maxy = round_up(max(max(curr['Tc']),max(curr['Th']))+1,10)
             plt.plot(x, curr['Th'], 'r->',label='Hot')

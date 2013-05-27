@@ -90,7 +90,7 @@ class MyModel(model.DnaModel):
             't': 443,
             'p': 1
         })
-        self.nodes[62]['t'] = 130
+        self.nodes[62]['t'] = 271.2
 
         self.nodes['47.1'].update({
             'media': 'water',

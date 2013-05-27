@@ -36,9 +36,7 @@ class MyModel(model.DnaModel):
 
         ### Receiver loop
 
-        self.addComponent(com.PinchHex, 'recup2r').nodes(13, '13.5', '15.1', 16)
-
-        self.addComponent(com.PinchHex, 'hpconr').nodes('13.5', 14, 66, 67)
+        self.addComponent(com.PinchHex, 'hpconr').nodes(13, 14, 66, 67)
 
         self.addComponent(com.Pump, 'hppumpr').nodes(14, 15)
 
@@ -46,9 +44,7 @@ class MyModel(model.DnaModel):
 
         ### Storage loop ###
 
-        self.addComponent(com.PinchHex, 'recup2s').nodes(41, 42, '44.1', 45)
-
-        self.addComponent(com.PinchHex, 'hpcons').nodes(42, 43, 69, 70)
+        self.addComponent(com.PinchHex, 'hpcons').nodes(41, 43, 69, 70)
 
         self.addComponent(com.Pump, 'hppumps').nodes(43, 44)
 
@@ -65,10 +61,10 @@ class MyModel(model.DnaModel):
         self.addComponent(com.Splitter, 'splitprh1').nodes(23, 24, 26)
 
         # Note: get node 16 right with iteration
-        self.addComponent(com.PinchHex, 'prheat1r').nodes(24, 25, '16.1', 17)
+        self.addComponent(com.PinchHex, 'prheat1r').nodes(24, 25, '15.1', 17)
 
         # Note: get node 43 right with iteration
-        self.addComponent(com.PinchHex, 'prheat1s').nodes(26, 27, '45.1', 46)
+        self.addComponent(com.PinchHex, 'prheat1s').nodes(26, 27, '44.1', 46)
 
         self.addComponent(com.Mixer, 'mixerprh1').nodes(25, 27, 28)
 
@@ -173,9 +169,9 @@ class MyModel(model.DnaModel):
         # Fixed guess
         self.nodes['6.1']['t'] = min(90, self.nodes[2]['t'])
 
-        if cond['t_node6'] is not False:
+        if cond['h_node6'] is not False:
             # Minor corrections might be needed after first run
-            self.nodes['6.1']['t'] = cond['t_node6']
+            self.nodes['6.1']['h'] = cond['h_node6']
 
         # Several fixed guesses:
         self.nodes[7]['t'] = t_sat + 10 # < Chosen to satisfy pinch
@@ -191,32 +187,32 @@ class MyModel(model.DnaModel):
         components['splitprh1'].calc()
 
         # Prheat1r
-        self.nodes['16.1'].update({
+        self.nodes['15.1'].update({
             'media': self.nodes[19]['media'],
             'y': cond['molefrac_n15'],
             'mdot': self.nodes[19]['mdot'],
             'p': self.nodes[19]['p']
         })
         # T probably close to maximum saturation temperature of stor/rcvr
-        self.nodes['16.1']['t'] = max(t_sat_stor, t_sat_rcvr)
+        self.nodes['15.1']['t'] = max(t_sat_stor, t_sat_rcvr)
 
-        if cond['t_node16.1'] is not False:
-            self.nodes['16.1']['t'] = cond['t_node16.1']
+        if cond['t_node15.1'] is not False:
+            self.nodes['15.1']['t'] = cond['t_node15.1']
 
         components['prheat1r'].calc(cond['Nseg'], cond['pinch_hex'])
 
         # Prheat1s
-        self.nodes['45.1'].update({
+        self.nodes['44.1'].update({
             'media': self.nodes[48]['media'],
             'y': cond['molefrac_n44'],
             'mdot': self.nodes[48]['mdot'],
             'p': self.nodes[48]['p']
         })
         # T probably close to maximum saturation temperature of stor/rcvr
-        self.nodes['45.1']['t'] = max(t_sat_stor, t_sat_rcvr)
+        self.nodes['44.1']['t'] = max(t_sat_stor, t_sat_rcvr)
 
-        if cond['t_node45.1'] is not False:
-            self.nodes['45.1']['t'] = cond['t_node45.1']
+        if cond['t_node44.1'] is not False:
+            self.nodes['44.1']['t'] = cond['t_node44.1']
 
         components['prheat1s'].calc(cond['Nseg'], cond['pinch_hex'])
 
@@ -261,21 +257,6 @@ class MyModel(model.DnaModel):
 
         ### Receiver loop ###
 
-        # Extra recuperator due to larger dT
-        self.nodes['15.1'].update({
-            'media': self.nodes[19]['media'],
-            'y': cond['molefrac_n15'],
-            'mdot': self.nodes[19]['mdot'],
-            'p': self.nodes[19]['p']
-        })
-        self.nodes['15.1']['t'] = t_sat_rcvr + 1 # Pump will add some heat
-
-        if cond['t_node15.1'] is not False:
-            self.nodes['15.1']['t'] = cond['t_node15.1']
-
-        self.nodes[16]['t'] = self.nodes[13]['t'] - cond['pinch_hex'] # Fixed guess
-        components['recup2r'].calc(cond['Nseg'], cond['pinch_hex'])
-
         self.nodes[66].update({
             'media': 'water',
             'y': 0,
@@ -288,27 +269,12 @@ class MyModel(model.DnaModel):
         self.nodes[14]['q'] = 0
         components['hpconr'].calc(cond['Nseg_con'], cond['pinch_con'])
 
-        self.nodes[15]['p'] = self.nodes['15.1']['p']   # Have to tell pump how far to increase pressure
+        self.nodes[15]['p'] = self.nodes[19]['p']   # Have to tell pump how far to increase pressure
         components['hppumpr'].calc()
 
         components['prheat2r'].calc(cond['Nseg'], cond['pinch_hex'])
 
         ### Storage loop ###
-
-        # Extra recuperator due to larger dT
-        self.nodes['44.1'].update({
-            'media': self.nodes[48]['media'],
-            'y': cond['molefrac_n44'],
-            'mdot': self.nodes[48]['mdot'],
-            'p': self.nodes[48]['p']
-        })
-        self.nodes['44.1']['t'] = t_sat_stor + 1 # Pump will add some heat
-
-        if cond['t_node44.1'] is not False:
-            self.nodes['44.1']['t'] = cond['t_node44.1']
-
-        self.nodes[45]['t'] = self.nodes[41]['t'] - cond['pinch_hex'] # Fixed guess
-        components['recup2s'].calc(cond['Nseg'], cond['pinch_hex'])
 
         self.nodes[69].update({
             'media': 'water',
@@ -322,7 +288,7 @@ class MyModel(model.DnaModel):
         self.nodes[43]['q'] = 0
         components['hpcons'].calc(cond['Nseg_con'], cond['pinch_con'])
 
-        self.nodes[44]['p'] = self.nodes['44.1']['p']   # Have to tell pump how far to increase pressure
+        self.nodes[44]['p'] = self.nodes[48]['p']   # Have to tell pump how far to increase pressure
         components['hppumps'].calc()
 
         components['prheat2s'].calc(cond['Nseg'], cond['pinch_hex'])
@@ -376,10 +342,10 @@ class MyModel(model.DnaModel):
 
         # This means: match n6[t] and n6.1[t]
         node6 = {
-            'cond': 't_node6',
-            'value': self.nodes[6]['t'],
-            'alter': self.nodes['6.1']['t'],
-            'range': [self.nodes['6.1']['t']-5, self.nodes[4]['t']+5]
+            'cond': 'h_node6',
+            'value': self.nodes[6]['h'],
+            'alter': self.nodes['6.1']['h'],
+            'range': [self.nodes[9]['h']-5, self.nodes[4]['h']+5]
         }
 
         # FIXME: This residual is not working accurately, it could be as much
@@ -388,6 +354,7 @@ class MyModel(model.DnaModel):
         res.append(node6)
 
         # This means: match n15.1[t] and n15[t]
+
         res.append({
             'cond': 't_node15.1',
             'value': self.nodes[15]['t'],
@@ -395,14 +362,8 @@ class MyModel(model.DnaModel):
             'range': [t_sat-5, self.nodes[15]['t']+5]
         })
 
-        res.append({
-            'cond': 't_node16.1',
-            'value': self.nodes[16]['t'],
-            'alter': self.nodes['16.1']['t'],
-            'range': [t_sat-5, self.nodes[16]['t']+5]
-        })
-
         # This means: match n43.1[t] and n43[t]
+
         res.append({
             'cond': 't_node44.1',
             'value': self.nodes[44]['t'],
@@ -410,19 +371,12 @@ class MyModel(model.DnaModel):
             'range': [t_sat-5, self.nodes[44]['t']+5]
         })
 
-        res.append({
-            'cond': 't_node45.1',
-            'value': self.nodes[45]['t'],
-            'alter': self.nodes['45.1']['t'],
-            'range': [t_sat-5, self.nodes[45]['t']+5]
-        })
-
         # Alter 18.1.t until it matches 18.t
         res.append({
             'cond': 't_node18.1',
             'value': self.nodes[18]['t'],
             'alter': self.cond['t_node18.1'],
-            'range': [self.nodes[16]['t']-5, self.nodes[2]['t']+5]
+            'range': [self.nodes[15]['t']-5, self.nodes[2]['t']+5]
         })
 
         # Alter 45.1.t until it matches 45.t
