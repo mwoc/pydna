@@ -38,7 +38,7 @@ cond['pinch_hex'] = 5
 cond['pinch_con'] = 4
 cond['pinch_stor'] = 20
 
-cond['Nseg'] = 11
+cond['Nseg'] = 19
 cond['Nseg_con'] = 1
 
 # Handle command line options

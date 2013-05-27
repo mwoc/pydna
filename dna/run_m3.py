@@ -58,15 +58,15 @@ if len(sys.argv) > 1:
             cond['molefrac_stor'] = float(opt[1])
 
 # Simulation guesses (iterate!!):
-cond['molefrac_lpp'] = 0.3
+cond['molefrac_lpp'] = (cond['molefrac_rcvr'] + cond['molefrac_stor'])/3
 cond['molefrac_n15'] = cond['molefrac_rcvr']
 cond['molefrac_n44'] = cond['molefrac_stor']
 
 cond['h_node6'] = False # That means no start value is given
 cond['t_node15.1'] = False
 cond['t_node44.1'] = False
-cond['t_node18.1'] = 40
-cond['t_node47.1'] = 40
+cond['t_node18.1'] = False
+cond['t_node47.1'] = False
 
 # Pass initial conditions to model and run/iterate it
 try:

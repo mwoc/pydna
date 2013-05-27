@@ -117,9 +117,15 @@ class MyModel(model.DnaModel):
         self.nodes['18.1'].update({
             'media': 'kalina',
             'y': cond['molefrac_n15'],
-            'p': cond['p_hi'],
-            't': cond['t_node18.1']
+            'p': cond['p_hi']
         })
+
+        # y does not have the right value
+        self.nodes['18.1']['t'] = states.state({'p': p_lo, 'y': cond['molefrac_n15'], 'q': 0.9})['t']
+
+        if cond['t_node18.1'] is not False:
+            self.nodes['18.1']['t'] = cond['t_node18.1']
+
         self.nodes[19]['t'] = cond['t_steam']
 
         components['receiver'].calc(cond['Q_rcvr'])
@@ -130,14 +136,19 @@ class MyModel(model.DnaModel):
             't': 443,
             'p': 1
         })
-        self.nodes[62]['t'] = 130
 
         self.nodes['47.1'].update({
             'media': 'kalina',
             'y': cond['molefrac_n44'],
-            'p': cond['p_hi'],
-            't': cond['t_node47.1']
+            'p': cond['p_hi']
         })
+
+        # y does not have the right value
+        self.nodes['47.1']['t'] = states.state({'p': p_lo, 'y': cond['molefrac_n44'], 'q': 0.9})['t']
+
+        if cond['t_node47.1'] is not False:
+            self.nodes['47.1']['t'] = cond['t_node47.1']
+
         self.nodes[48]['t'] = self.nodes[61]['t'] - 5
 
         components['storage'].calc(cond['Nseg'], cond['pinch_hex'], Q = cond['Q_stor'])

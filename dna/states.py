@@ -226,13 +226,20 @@ def refpropState(node):
             if mode is 'ph':
                 # Assume something in the 2-phase region. temperature changes very little with enthalpy
                 prop = _PHworkaround(_node)
-                print('Workaround for iteration, enthalpy difference {} J/mol*K'.format(in2 - _node['h']))
+                print('Workaround for iteration, enthalpy difference {:.2e} K'.format(in2 - _node['h']))
+            elif mode is 'tp':
+                propl = rp.flsh('tp', _node['t'] - 0.1, _node['p'], _node['x'])
+                propr = rp.flsh('tp', _node['t'] + 0.1, _node['p'], _node['x'])
+                h = (propl['h'] + propr['h']) / 2
+
+                prop = rp.flsh('ph', _node['p'], h, _node['x'])
+                print('Workaround for iteration, temperature difference {:.2e} J/mol*K'.format(in1 - _node['t']))
             else:
-                raise(e)
                 print(node)
                 print(mode)
                 print(in1)
                 print(in2)
+                raise(e)
 
         except Exception as e:
             print(node)

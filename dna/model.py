@@ -108,87 +108,62 @@ class IterateModel:
             return [currIter]
         return
 
-    def updateGuesses(self, res):
+    def updateSingleGuess(self, currRes, currIter, manual = False):
+
+        print(self.i + 1, ' - ', currRes['cond'], ': ', self.cond[currRes['cond']])
+
+        print('x = ', currIter.x)
+        print('y = ', currIter.y)
+        print('delta = ', currIter.delta)
+
+        # Get new guess:
+        self.cond[currRes['cond']] = currIter.optimize(currRes['alter'], manual = manual)
+
+        # From here on self.cond[currRes['cond']] is guaranteed available, so use it
+
+        # Apply range
+        orig = self.cond[currRes['cond']]
+        self.cond[currRes['cond']] = max(currRes['range'][0], self.cond[currRes['cond']])
+        self.cond[currRes['cond']] = min(currRes['range'][1], self.cond[currRes['cond']])
+
+        if self.cond[currRes['cond']] != orig:
+            self.cond[currRes['cond']] = currRes['alter'] + currIter.delta
+
+            # Make sure this does not also fall out of range
+
+            self.cond[currRes['cond']] = max(currRes['range'][0], self.cond[currRes['cond']])
+            self.cond[currRes['cond']] = min(currRes['range'][1], self.cond[currRes['cond']])
+
+            print('Using manual guess instead of: ',orig)
+
+        print(self.i + 1, ' - ', currRes['cond'], ': ', self.cond[currRes['cond']])
+
+    def updateGuesses(self, res, manual = False):
         print('Updating conditions based on residuals...')
         # Loop over all residuals
 
+        iterList = []
+        resList = []
+
+        # First find out how many residuals there are left
         for res_index, currRes in enumerate(res):
 
             currIter = self.getDelta(res, index = res_index)[0]
 
             if abs(currIter.delta) > currIter.tol:
 
-                print(self.i + 1, ' - ', currRes['cond'], ': ', self.cond[currRes['cond']])
+                iterList.append(currIter)
+                resList.append(currRes)
 
-                print('x = ', currIter.x)
-                print('y = ', currIter.y)
-                print('delta = ', currIter.delta)
+        # If 0 or 1 residual left, set manual to True
+        if len(iterList) < 2:
+            manual = True
 
-                # Get new guess:
-                self.cond[currRes['cond']] = currIter.optimize(currRes['alter'], manual = False)
+        for ix, currIter in enumerate(iterList):
 
-                # From here on self.cond[currRes['cond']] is guaranteed available, so use it
+            currRes = resList[ix]
 
-                # Apply range
-                orig = self.cond[currRes['cond']]
-                self.cond[currRes['cond']] = max(currRes['range'][0], self.cond[currRes['cond']])
-                self.cond[currRes['cond']] = min(currRes['range'][1], self.cond[currRes['cond']])
-
-                if self.cond[currRes['cond']] != orig:
-                    self.cond[currRes['cond']] = currRes['alter'] + currIter.delta
-
-                    # Make sure this does not also fall out of range
-
-                    self.cond[currRes['cond']] = max(currRes['range'][0], self.cond[currRes['cond']])
-                    self.cond[currRes['cond']] = min(currRes['range'][1], self.cond[currRes['cond']])
-
-                    print('Using manual guess instead of: ',orig)
-
-                print(self.i + 1, ' - ', currRes['cond'], ': ', self.cond[currRes['cond']])
-
-    def export(self, filename):
-        # Print to csv file
-        with open('../output/'+filename+'.csv','w',newline='',encoding='utf-8') as csvfile:
-            print('Exporting log to csv file...')
-
-            writer = csv.writer(csvfile,delimiter=',',quotechar='"',quoting=csv.QUOTE_MINIMAL)
-
-            writer.writerow(['Ran {:d} iterations'.format(self.i)])
-
-            writer.writerow([])
-            writer.writerow(['RESIDUALS:'])
-            writer.writerow(['Condition', 'Value', 'Residual'])
-
-            for i, currIter in enumerate(self.iterate):
-                writer.writerow([currIter.cond, self.cond[currIter.cond], currIter.delta])
-                print('{0}: {1:.2f} ({2:+.3e})'.format(currIter.cond, self.cond[currIter.cond], currIter.delta))
-
-            writer.writerow([])
-            writer.writerow(['CONDITIONS:'])
-            writer.writerow(['Condition', 'Value'])
-
-            for i in self.cond:
-                writer.writerow([i, self.cond[i]])
-
-            writer.writerow([])
-            writer.writerow(['EFFICIENCY:'])
-
-            print(self.lastRun)
-            eff = self.lastRun.efficiency()
-
-            writer.writerow(['Param', 'Value'])
-
-            if 'Q_in' in eff:
-                writer.writerow(['Q_in', eff['Q_in']])
-            if 'W_in' in eff:
-                writer.writerow(['W_in', eff['W_in']])
-            if 'W_out' in eff:
-                writer.writerow(['W_out', eff['W_out']])
-            if 'eff' in eff:
-                writer.writerow(['Eff.:', eff['eff']])
-
-            csvfile.close()
-        print('Export done')
+            self.updateSingleGuess(currRes, currIter, manual)
 
     def run(self, oldResult = False):
         '''
@@ -311,3 +286,47 @@ class IterateModel:
         self.getDelta(res)
 
         return model
+
+    def export(self, filename):
+        # Print to csv file
+        with open('../output/'+filename+'.csv','w',newline='',encoding='utf-8') as csvfile:
+            print('Exporting log to csv file...')
+
+            writer = csv.writer(csvfile,delimiter=',',quotechar='"',quoting=csv.QUOTE_MINIMAL)
+
+            writer.writerow(['Ran {:d} iterations'.format(self.i)])
+
+            writer.writerow([])
+            writer.writerow(['RESIDUALS:'])
+            writer.writerow(['Condition', 'Value', 'Residual'])
+
+            for i, currIter in enumerate(self.iterate):
+                writer.writerow([currIter.cond, self.cond[currIter.cond], currIter.delta])
+                print('{0}: {1:.2f} ({2:+.3e})'.format(currIter.cond, self.cond[currIter.cond], currIter.delta))
+
+            writer.writerow([])
+            writer.writerow(['CONDITIONS:'])
+            writer.writerow(['Condition', 'Value'])
+
+            for i in self.cond:
+                writer.writerow([i, self.cond[i]])
+
+            writer.writerow([])
+            writer.writerow(['EFFICIENCY:'])
+
+            print(self.lastRun)
+            eff = self.lastRun.efficiency()
+
+            writer.writerow(['Param', 'Value'])
+
+            if 'Q_in' in eff:
+                writer.writerow(['Q_in', eff['Q_in']])
+            if 'W_in' in eff:
+                writer.writerow(['W_in', eff['W_in']])
+            if 'W_out' in eff:
+                writer.writerow(['W_out', eff['W_out']])
+            if 'eff' in eff:
+                writer.writerow(['Eff.:', eff['eff']])
+
+            csvfile.close()
+        print('Export done')
