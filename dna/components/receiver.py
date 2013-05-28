@@ -1,5 +1,6 @@
-from states import state
-from component import Component
+from dna.states import state
+from dna.component import Component
+
 '''
 Fixed energy input. Model should be able to find:
 *mdot for fixed inlet + outlet temperature

@@ -1,9 +1,7 @@
-import components as comp
-import model
-
-# For plotting:
 from numpy import linspace
 import matplotlib.pyplot as plt
+
+import dna.components as comp
 
 def round_down(num, divisor):
     return num - (num%divisor)
@@ -11,7 +9,7 @@ def round_up(num, divisor):
     return num + (num%divisor)
 
 # Actual test:
-class CondenserTest(model.DnaModel):
+class CondenserTest(dna.model.DnaModel):
     def run(self):
         heatex = self.addComponent(comp.PinchHex, 'heatex').nodes(1, 2, 3, 4)
 

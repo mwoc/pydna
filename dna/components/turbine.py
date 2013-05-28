@@ -1,8 +1,9 @@
-import states
-import component
 import warnings
 
-class Turbine(component.Component):
+from dna.states import state
+from dna.component import Component
+
+class Turbine(Component):
     def nodes(self,in1,out1):
         self.addInlet(in1)
         self.addOutlet(out1)
@@ -18,7 +19,7 @@ class Turbine(component.Component):
             n2['media'] = n1['media']
 
         # Override default behaviour, use PT input
-        prop1 = states.state({'p':n1['p'],'t':n1['t'],'y':n1['y']})
+        prop1 = state({'p':n1['p'],'t':n1['t'],'y':n1['y']})
         n1.update(prop1)
 
         n2s = n2.copy()
@@ -30,14 +31,14 @@ class Turbine(component.Component):
 
         #if not 'p' in n2s:
         #    if 't' in n2s:
-        #        n2s['p'] = n2['p'] = states.state({'t': n2s['t'], 'y': n2s['y']})
+        #        n2s['p'] = n2['p'] = state({'t': n2s['t'], 'y': n2s['y']})
 
-        prop2s = states.state({'p':n2s['p'],'s':n2s['s'],'y':n2s['y']})
+        prop2s = state({'p':n2s['p'],'s':n2s['s'],'y':n2s['y']})
 
         # Apply isentropic efficiency:
         n2['h'] = n1['h'] + eff_is*(prop2s['h'] - n1['h'])
 
-        states.state(n2)
+        state(n2)
 
         if n2['q'] < 0.85:
             warnings.warn('More than 15% moisture fraction at turbine exit!', RuntimeWarning)

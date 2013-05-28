@@ -1,5 +1,4 @@
-from iterate import IterateParamHelper
-import refprop
+from dna.iterate import IterateParamHelper
 import csv
 
 def is_number(s):
@@ -38,7 +37,7 @@ class DnaModel:
     def export(self, filename):
 
         # Print to csv file
-        with open('../output/'+filename+'.csv','w',newline='',encoding='utf-8') as csvfile:
+        with open('output/'+filename+'.csv','w',newline='',encoding='utf-8') as csvfile:
             print('Exporting results to csv file...')
             fieldnames = ['Node','from','to','media','y','mdot','cp','t','p','h','q','s','e']
             writer = csv.DictWriter(csvfile,fieldnames=fieldnames,restval='-',delimiter=',',quotechar='"',quoting=csv.QUOTE_MINIMAL)
@@ -289,7 +288,7 @@ class IterateModel:
 
     def export(self, filename):
         # Print to csv file
-        with open('../output/'+filename+'.csv','w',newline='',encoding='utf-8') as csvfile:
+        with open('output/'+filename+'.csv','w',newline='',encoding='utf-8') as csvfile:
             print('Exporting log to csv file...')
 
             writer = csv.writer(csvfile,delimiter=',',quotechar='"',quoting=csv.QUOTE_MINIMAL)

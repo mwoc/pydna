@@ -1,8 +1,8 @@
-import states
-from component import Component
-import states
-import scipy
 import warnings
+import scipy
+
+from dna.states import state
+from dna.component import Component
 
 class Valve(Component):
 
@@ -15,7 +15,7 @@ class Valve(Component):
     def calc(self):
         n = self.getNodes()
 
-        states.state(n['i'][0])
+        state(n['i'][0])
 
         if 'media' in n['i'][0]:
             n['o'][0]['media'] = n['i'][0]['media']
@@ -24,7 +24,7 @@ class Valve(Component):
         n['o'][0]['y'] = n['i'][0]['y']
         n['o'][0]['mdot'] = n['i'][0]['mdot']
 
-        states.state(n['o'][0])
+        state(n['o'][0])
         return self
 
 class Mixer(Component):
@@ -72,7 +72,7 @@ class Mixer(Component):
             # Enthalpy balance
             n3['h'] = (n1['mdot']*n1['h'] + n2['mdot']*n2['h'] )/n3['mdot']
 
-        states.state(n3)
+        state(n3)
         return self
 
 class Splitter(Component):
@@ -109,7 +109,7 @@ class Splitter(Component):
             'y': n1['y'],
             'cp': n1['cp']
         })
-        states.state(n2)
+        state(n2)
 
         n3.update({
             'p': n1['p'],
@@ -117,7 +117,7 @@ class Splitter(Component):
             'y': n1['y'],
             'cp': n1['cp']
         })
-        states.state(n3)
+        state(n3)
 
         return self
 
@@ -259,8 +259,8 @@ class DoubleSplitMix(Component):
         no_rich['h'] = (ni_lean_b['mdot']*ni_lean_b['h'] + ni_rich_b['mdot']*ni_rich_b['h'] )/no_rich['mdot']
 
         # Get states:
-        states.state(no_lean)
-        states.state(no_rich)
+        state(no_lean)
+        state(no_rich)
 
         return self
 
@@ -283,8 +283,8 @@ class DoubleSplitMix(Component):
         n4['p'] = n3['p'] = n2['p'] = n1['p']
 
         # Be sure to have full information of inputs:
-        states.state(n1)
-        states.state(n2)
+        state(n1)
+        state(n2)
 
         self.checkBounds(n1, n2, n3) # Make sure n3['y'] is in bounds
         self.checkBounds(n1, n2, n4) # Make sure n4['y'] is in bounds

@@ -1,8 +1,9 @@
-import states
-import component
 import warnings
 
-class Pump(component.Component):
+from dna.states import state
+from dna.component import Component
+
+class Pump(Component):
     def nodes(self,in1,out1):
         self.addInlet(in1)
         self.addOutlet(out1)
@@ -14,7 +15,7 @@ class Pump(component.Component):
         n1 = n['i'][0]
         n2 = n['o'][0]
 
-        states.state(n1)
+        state(n1)
 
         if n1['q'] > 0.001:
             msg = self.name +' - pump inlet has to be saturated or sub-cooled liquid, found %s!' % n1['q']
@@ -31,6 +32,6 @@ class Pump(component.Component):
 
         # Density kg/m3 to specific volume m3/kg:
         # n2['h'] = n1['h'] - (1/prop1['D'])*(n1['p']*100 - n2['p']*100)
-        states.state(n2)
+        state(n2)
 
         return self

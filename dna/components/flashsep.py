@@ -1,9 +1,10 @@
-import states
-import component
-import scipy
 import warnings
+import scipy
 
-class FlashSep(component.Component):
+from dna.states import state
+from dna.component import Component
+
+class FlashSep(Component):
     def nodes(self,in1,out1,out2):
         self.addInlet(in1)
         self.addOutlet(out1)
@@ -21,7 +22,7 @@ class FlashSep(component.Component):
             n3['media'] = n2['media'] = n1['media']
 
         # Inlet
-        states.state(n1)
+        state(n1)
 
         flowFrac = n1['q']
 
@@ -81,7 +82,7 @@ class FlashSep(component.Component):
         # Correct the mass fraction based on total mass flow
         n2['y'] = n2['y'] + alter*(n2['mdot']/n1['mdot'])
 
-        states.state(n2)
-        states.state(n3)
+        state(n2)
+        state(n3)
 
         return self

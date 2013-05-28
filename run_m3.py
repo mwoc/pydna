@@ -5,7 +5,7 @@ from numpy import linspace
 import matplotlib.pyplot as plt
 
 import m3_rs_t
-from model import IterateModel
+from dna.model import IterateModel
 
 def round_down(num, divisor):
     return num - (num%divisor)
@@ -112,7 +112,7 @@ for i in com:
         plt.title(_title)
         plt.ylim(miny,maxy)
         plt.grid(True)
-        plt.savefig('../output/m3/m3-pinch_' + str(i) + '.png')
+        plt.savefig('output/m3/m3-pinch_' + str(i) + '.png')
         plt.close()
 
     else:

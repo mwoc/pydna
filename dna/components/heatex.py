@@ -1,10 +1,11 @@
-import states
-from iterate import IterateParamHelper
 import scipy
 import scipy.optimize
-import refprop
-import component
 import warnings
+
+# Some short-hands:
+from dna.states import state
+from dna.iterate import IterateParamHelper
+from dna.component import Component
 
 class ConvergenceError(Exception):
     def __init__(self, value):
@@ -59,10 +60,10 @@ class PinchCalc:
             n2_['h'] = n1['h'] - dH_H*i
             n3_['h'] = n4['h'] - dH_C*i
 
-            T2_ = states.state(n2_)['t']
+            T2_ = state(n2_)['t']
             Th.append(T2_)
 
-            T3_ = states.state(n3_)['t']
+            T3_ = state(n3_)['t']
             Tc.append(T3_)
 
             if T2_ - T3_ < dT_pinch:
@@ -155,12 +156,12 @@ class PinchCalc:
                     _n4['t'] = _n1['t'] - 2*dTmin
                     dT_left = -2*dTmin
 
-                states.state(_n4)
+                state(_n4)
 
                 print('n4 = ', _n4['t'])
 
                 _n2['h'] = (_n1['h'] * _n1['mdot'] - (_n3['mdot'] * (_n4['h'] - _n3['h']))) / _n1['mdot']
-                states.state(_n2)
+                state(_n2)
 
                 if _n2['t'] < _n3['t']:
                     print('Pretty sure this should be analysed from side 2')
@@ -177,12 +178,12 @@ class PinchCalc:
                     _n2['t'] = _n3['t'] - dTmin
                     dT_left = dTmin
 
-                states.state(_n2)
+                state(_n2)
 
                 print('n2 = ', _n2['t'])
 
                 _n4['h'] = (_n3['h'] * _n3['mdot'] + (_n1['mdot'] * (_n1['h'] - _n2['h']))) / _n3['mdot']
-                states.state(_n4)
+                state(_n4)
 
                 print('n4 = ', _n4['t'])
 
@@ -205,7 +206,7 @@ class PinchCalc:
                         _n2['t'] = _n1['tmin']
                         dT_left = _n3['t'] - _n2['t']
 
-                    states.state(_n2)
+                    state(_n2)
 
                     _n1['mdot'] = ((_n4['h'] - _n3['h']) * _n3['mdot']) / (_n1['h'] - _n2['h'])
 
@@ -230,7 +231,7 @@ class PinchCalc:
                 try:
                     # Check internal pinch too
                     result['pinch'] = self.check(_n1, _n2, _n3, _n4)
-                except refprop.RefpropError as e:
+                except dna.rp.RefpropError as e:
                     # Ignore me
                     print(e)
                     print('Next')
@@ -260,7 +261,7 @@ class PinchCalc:
 
             return result['pinch']
 
-class PinchHex(component.Component):
+class PinchHex(Component):
     def nodes(self, in1, out1, in2, out2):
         self.addInlet(in1)
         self.addInlet(in2)
@@ -279,8 +280,8 @@ class PinchHex(component.Component):
         n4 = n['o'][1]
 
         # Find states for all known inputs:
-        states.state(n1) # Hot inlet
-        states.state(n3) # Cold inlet
+        state(n1) # Hot inlet
+        state(n3) # Cold inlet
 
         n2['p'] = n1['p']
         n2['y'] = n1['y']
@@ -308,32 +309,32 @@ class PinchHex(component.Component):
         if n1['t'] < n3['t']:
             # Act as if this component is bypassed
             n2['t'] = n1['t']
-            states.state(n2)
+            state(n2)
 
             n4['t'] = n3['t']
-            states.state(n4)
+            state(n4)
             warnings.warn(self.name + " - cold inlet has higher temperature than hot inlet, this is not possible so setting heat exchange to 0", RuntimeWarning)
             return self
 
         calc = False
 
         if 'q' in n2 or 't' in n2:
-            n2h = states.state(n2.copy())['h']
+            n2h = state(n2.copy())['h']
 
             # Enthalpy in hot fluid cannot increase
             if n2h >= n1['h']:
                 n2['h'] = n1['h']
 
-            states.state(n2)
+            state(n2)
 
         if 't' in n4 or 'q' in n4:
-            n4h = states.state(n4.copy())['h']
+            n4h = state(n4.copy())['h']
 
             # Enthalpy in cold fluid cannot decrease
             if n4h <= n3['h']:
                 n4['h'] = n3['h']
 
-            states.state(n4) # Cold outlet
+            state(n4) # Cold outlet
 
         # Initiate pincher for later use
         pincher = PinchCalc(n1, n2, n3, n4, Nseg, dTmin)
@@ -346,10 +347,10 @@ class PinchHex(component.Component):
             if n1['mdot'] <= 0 or n3['mdot'] <= 0:
                 # No heat exchange at all
                 n2['t'] = n1['t']
-                states.state(n2)
+                state(n2)
 
                 n4['t'] = n3['t']
-                states.state(n4)
+                state(n4)
             else:
                 # First try one side of the HEX
                 try:
@@ -361,17 +362,17 @@ class PinchHex(component.Component):
                     # If that failed, try from the other
                     try:
                         pinch = pincher.iterate(side = 2)
-                    except refprop.RefpropError as e:
+                    except dna.rp.RefpropError as e:
                         print('Second side iteration also failed.')
                         raise Exception(e)
-                except refprop.RefpropError as e:
+                except dna.rp.RefpropError as e:
                     print('First side failed, trying second. Reason:')
                     print(e)
 
                     # If that failed, try from the other
                     try:
                         pinch = pincher.iterate(side = 2)
-                    except refprop.RefpropError as e:
+                    except dna.rp.RefpropError as e:
                         print('Second side iteration also failed.')
                         raise Exception(e)
                 except ConvergenceError as e:
@@ -379,7 +380,7 @@ class PinchHex(component.Component):
 
                     try:
                         pinch = pincher.iterate(side = 2)
-                    except refprop.RefpropError as e:
+                    except dna.rp.RefpropError as e:
                         print('Second side iteration also failed.')
                         raise Exception(e)
                 except Exception as e:
@@ -395,7 +396,7 @@ class PinchHex(component.Component):
 
             if 'mdot' in n1 and 'mdot' in n3:
                 n4['h'] = (n3['h'] * n3['mdot'] + (n1['mdot'] * (n1['h'] - n2['h']))) / n3['mdot']
-                states.state(n4)
+                state(n4)
             else:
                 n1['mdot'] = Q / (n1['h'] - n2['h'])
 
@@ -410,7 +411,7 @@ class PinchHex(component.Component):
 
             if 'mdot' in n1 and 'mdot' in n3:
                 n2['h'] = (n1['h'] * n1['mdot'] - (n3['mdot'] * (n4['h'] - n3['h']))) / n1['mdot']
-                states.state(n2)
+                state(n2)
             else:
                 n3['mdot'] = Q / (n4['h'] - n3['h'])
 
@@ -452,7 +453,7 @@ class PinchHex(component.Component):
 
         return self
 
-class Condenser(component.Component):
+class Condenser(Component):
     def nodes(self, in1, out1):
         self.addInlet(in1)
         self.addOutlet(out1)
@@ -472,12 +473,12 @@ class Condenser(component.Component):
         n2['mdot'] = n1['mdot']
 
         # If it is subcooled liquid entering the condenser, pass it through unamended
-        Tsat = states.state({'p': n1['p'], 'y': n1['y'], 'q': 0})['t']
+        Tsat = state({'p': n1['p'], 'y': n1['y'], 'q': 0})['t']
         if Tsat > n1['t']:
             n2['t'] = n1['t']
         else:
             n2['t'] = Tsat
 
-        states.state(n2)
+        state(n2)
 
         return self

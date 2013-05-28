@@ -1,5 +1,6 @@
-import refprop as rp
 from decimal import Decimal
+
+from dna.vendor import refprop as rp
 
 class Error(Exception):
     """Base class for exceptions in this module."""
