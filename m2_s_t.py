@@ -1,8 +1,8 @@
-import components as com
-import states
-import model
+import dna.components as com
+from dna.states import state
+from dna.model import DnaModel
 
-class MyModel(model.DnaModel):
+class MyModel(DnaModel):
 
     def init(self):
         '''
@@ -100,22 +100,22 @@ class MyModel(model.DnaModel):
 
         # Simulation params
         t_sat = cond['t_con'] + cond['pinch_con']
-        p_lo = states.state({
+        p_lo = state({
             'media': 'kalina',
             'y': cond['molefrac_lpp'],
             't': t_sat,
             'q': 0
         })['p']
 
-        p_me = states.state({
+        p_me = state({
             'media': 'kalina',
             'y': cond['molefrac_n44'],
             't': t_sat,
             'q': 0
         })['p']
 
-        t_sat_stor = states.state({'p': p_me, 'y': cond['molefrac_n44'], 'q': 0})['t']
-        #t_sat_rcvr = states.state({'p': p_me, 'y': cond['molefrac_n15'], 'q': 0})['t']
+        t_sat_stor = state({'p': p_me, 'y': cond['molefrac_n44'], 'q': 0})['t']
+        #t_sat_rcvr = state({'p': p_me, 'y': cond['molefrac_n15'], 'q': 0})['t']
 
         # Receiver conditions:
         #self.nodes['18.1'].update({

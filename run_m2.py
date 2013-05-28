@@ -3,7 +3,7 @@ from numpy import linspace
 import matplotlib.pyplot as plt
 
 import m2_s_t
-from model import IterateModel
+from dna.model import IterateModel
 
 def round_down(num, divisor):
     return num - (num%divisor)

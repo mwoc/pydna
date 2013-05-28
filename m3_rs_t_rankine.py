@@ -1,8 +1,8 @@
-import components as com
-import states
-import model
+import dna.components as com
+from dna.states import state
+from dna.model import DnaModel
 
-class MyModel(model.DnaModel):
+class MyModel(DnaModel):
 
     def init(self):
         '''
@@ -66,7 +66,7 @@ class MyModel(model.DnaModel):
 
         # Simulation params
         t_sat = cond['t_con'] + cond['pinch_con'] + cond['dT_con']
-        p_lo = states.state({
+        p_lo = state({
             'media': 'water',
             'y': 0,
             't': t_sat,

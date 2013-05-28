@@ -5,7 +5,7 @@ from numpy import linspace
 import matplotlib.pyplot as plt
 
 import m3_rs_t_identical
-from model import IterateModel
+from dna.model import IterateModel
 
 def round_down(num, divisor):
     return num - (num%divisor)

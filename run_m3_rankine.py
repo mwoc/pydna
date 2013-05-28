@@ -5,7 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 import m3_rs_t_rankine
-from model import IterateModel
+from dna.model import IterateModel
 
 def round_down(num, divisor):
     return num - (num%divisor)

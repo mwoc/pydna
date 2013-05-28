@@ -1,8 +1,8 @@
-import components as com
-import states
-import model
+import dna.components as com
+from dna.states import state
+from dna.model import DnaModel
 
-class MyModel(model.DnaModel):
+class MyModel(DnaModel):
 
     def init(self):
         '''
@@ -94,14 +94,14 @@ class MyModel(model.DnaModel):
 
         # Simulation params
         t_sat = cond['t_con'] + cond['pinch_con']
-        p_lo = states.state({
+        p_lo = state({
             'media': 'kalina',
             'y': cond['molefrac_lpp'],
             't': t_sat,
             'q': 0
         })['p']
 
-        p_me = states.state({
+        p_me = state({
             'media': 'kalina',
             'y': cond['molefrac_tur'],
             't': t_sat,
