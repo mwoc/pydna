@@ -46,7 +46,7 @@ cond['Nseg_con'] = 1
 if len(sys.argv) > 1:
     _args = sys.argv.copy()
     _args.pop(0)
-    optlist, args = getopt.getopt(_args, '', ['pressure=', 'y-rcvr=', 'y-stor='])
+    optlist, args = getopt.getopt(_args, '', ['pressure=', 'y-rcvr=', 'y-stor=', 'y-lpp='])
 
     for i, opt in enumerate(optlist):
 
@@ -56,11 +56,15 @@ if len(sys.argv) > 1:
             cond['molefrac_rcvr'] = float(opt[1])
         elif opt[0] == '--y-stor':
             cond['molefrac_stor'] = float(opt[1])
+        elif opt[0] == '--y-lpp':
+            cond['molefrac_lpp'] = float(opt[1])
 
 # Simulation guesses (iterate!!):
-cond['molefrac_lpp'] = (cond['molefrac_rcvr'] + cond['molefrac_stor'])/3
 cond['molefrac_n15'] = cond['molefrac_rcvr']
 cond['molefrac_n44'] = cond['molefrac_stor']
+
+if not 'molefrac_lpp' in cond:
+    cond['molefrac_lpp'] = (cond['molefrac_rcvr'] + cond['molefrac_stor'])/4
 
 cond['h_node6'] = False # That means no start value is given
 cond['t_node15.1'] = False

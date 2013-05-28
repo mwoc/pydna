@@ -40,7 +40,7 @@ class IterateParamHelper:
 
     def optimize(self, currVal, manual = True):
 
-        newVal = False
+        # Use early returns in this method to prevent code duplication
 
         if len(self.x) > 5 and manual is False:
             bmin = min(self.y)
@@ -62,17 +62,30 @@ class IterateParamHelper:
 
         if abs(currVal) < 1 and abs(self.delta) > 0.1 * abs(currVal):
             # Be extra careful for deviations larger than 10%
-            newVal = self.careful(currVal)
-        else:
-            # Only use polyfit when converging reasonably fast
-            if len(self.x) > 1 and (manual is True or 1.5*abs(self.y[-1]) <= abs(self.y[-2])):
+            return self.careful(currVal)
+
+        if len(self.x) > 1:
+            # Only use polyfit when either of these is true:
+            # - Forced to by the manual parameter
+            # - Oscillating around 0
+            # - Converging reasonably fast
+
+            useNormalNewton = manual
+
+            if self.y[-2] <= 0 <= self.y[-1] or self.y[-2] >= 0 >= self.y[-1]:
+                # Normal newton absolutely required!
+                useNormalNewton = True
+
+            if 1.5*abs(self.y[-1]) <= abs(self.y[-2]):
+                # Normal newton faster than careful method, but either should work
+                useNormalNewton = True
+
+            if useNormalNewton:
                 print('Normal newton')
                 z = np.polyfit([self.x[-2], self.x[-1]], [self.y[-2], self.y[-1]], 1)
                 p = np.poly1d(z)
 
                 # Find zero
-                newVal = scipy.optimize.newton(p, currVal)
-            else:
-                newVal = self.careful(currVal)
+                return scipy.optimize.newton(p, currVal)
 
-        return newVal
+        return self.careful(currVal)
