@@ -1,11 +1,23 @@
-import os
+import os, sys, getopt
 import csv
 
 root = os.getcwd()
 
+if len(sys.argv) > 1:
+    print(sys.argv)
+    _args = sys.argv.copy()
+    _args.pop(0)
+    optlist, args = getopt.getopt(_args, '', ['path='])
+
+    for i, opt in enumerate(optlist):
+
+        if opt[0] == '--path':
+            root = os.path.join(root, str(opt[1]))
+
 for f in sorted(os.listdir(root)):
-    if os.path.isfile(f) and os.path.splitext(f)[1] == '.csv':
-        with open(os.path.join(root, f), 'r') as csvfile:
+    fullpath = os.path.join(root, f)
+    if os.path.isfile(fullpath) and os.path.splitext(fullpath)[1] == '.csv':
+        with open(fullpath, 'r') as csvfile:
 
             print('File: {}'.format(f))
             reader = csv.reader(csvfile, delimiter = ',', quotechar = '"', quoting = csv.QUOTE_MINIMAL)

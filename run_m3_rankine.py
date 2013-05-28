@@ -105,7 +105,7 @@ if True:#not cmdLine:
             plt.title(_title)
             plt.ylim(miny,maxy)
             plt.grid(True)
-            plt.savefig('../output/m3_rankine/m3r-pinch_' + str(i) + '.png')
+            plt.savefig('output/m3_rankine/m3r-pinch_' + str(i) + '.png')
             plt.close()
 
 # Plot

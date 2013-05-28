@@ -86,7 +86,7 @@ for i in com:
         plt.title(_title)
         plt.ylim(miny,maxy)
         plt.grid(True)
-        plt.savefig('../output/pinch_' + str(i) + '.png')
+        plt.savefig('output/pinch_' + str(i) + '.png')
         plt.close()
 
     else:
