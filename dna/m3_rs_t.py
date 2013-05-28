@@ -90,6 +90,8 @@ class MyModel(model.DnaModel):
         components = self.components
         cond = self.cond
 
+        print('P: {:.2f}, y-stor: {:.2f}, y-rcvr: {:.2f}'.format(cond['p_hi'], cond['molefrac_stor'], cond['molefrac_rcvr']))
+
         # Guess params for dividing mass flow in splitprh1 and splitprh2
         frac_stor = cond['Q_stor'] / (cond['Q_stor'] + cond['Q_rcvr'])
         frac_rcvr = 1 - frac_stor

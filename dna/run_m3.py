@@ -44,6 +44,7 @@ cond['Nseg_con'] = 1
 
 # Handle command line options
 if len(sys.argv) > 1:
+    print(sys.argv)
     _args = sys.argv.copy()
     _args.pop(0)
     optlist, args = getopt.getopt(_args, '', ['pressure=', 'y-rcvr=', 'y-stor=', 'y-lpp='])
