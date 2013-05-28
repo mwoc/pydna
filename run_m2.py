@@ -1,3 +1,5 @@
+import sys
+import getopt
 import collections
 from numpy import linspace
 import matplotlib.pyplot as plt
@@ -37,21 +39,39 @@ cond['pinch_hex'] = 5
 cond['pinch_con'] = 4
 cond['pinch_stor'] = 20
 
-cond['Nseg'] = 5
+cond['Nseg'] = 11
 cond['Nseg_con'] = 1
 
+# Handle command line options
+if len(sys.argv) > 1:
+    print(sys.argv)
+    _args = sys.argv.copy()
+    _args.pop(0)
+    optlist, args = getopt.getopt(_args, '', ['pressure=', 'y-rcvr=', 'y-stor=', 'y-lpp='])
+
+    for i, opt in enumerate(optlist):
+
+        if opt[0] == '--pressure':
+            cond['p_hi'] = float(opt[1])
+        elif opt[0] == '--y-rcvr':
+            cond['molefrac_rcvr'] = float(opt[1])
+        elif opt[0] == '--y-stor':
+            cond['molefrac_stor'] = float(opt[1])
+        elif opt[0] == '--y-lpp':
+            cond['molefrac_lpp'] = float(opt[1])
+
 # Simulation guesses (iterate!!):
-cond['molefrac_lpp'] = 0.3
 cond['molefrac_n15'] = cond['molefrac_rcvr']
 cond['molefrac_n44'] = cond['molefrac_stor']
 
-cond['t_node6'] = False # That means no start value is given
+if not 'molefrac_lpp' in cond:
+    cond['molefrac_lpp'] = (cond['molefrac_rcvr'] + cond['molefrac_stor'])/4
+
+cond['h_node6'] = False # That means no start value is given
 cond['t_node15.1'] = False
-cond['t_node16.1'] = False
 cond['t_node44.1'] = False
-cond['t_node45.1'] = False
-cond['t_node18.1'] = 80
-cond['t_node47.1'] = 80
+cond['t_node18.1'] = False
+cond['t_node47.1'] = False
 
 # Pass initial conditions to model and run/iterate it
 try:
@@ -62,9 +82,15 @@ except KeyboardInterrupt:
     print('Halted execution..')
     model = runner.lastRun
 finally:
-    eff = model.result['eff']
+    #eff = model.result['eff']
 
-    model.export('result')
+    simname = 'm2-p{0:.2f}-ys{1:.2f}-yb{2:.2f}'.format(cond['p_hi'], cond['molefrac_n44'], cond['molefrac_n15'])
+
+    # Export result
+    model.export('m2/'+simname)
+
+    # Export log
+    runner.export('m2/'+simname+'-log')
 
 print('Plotting...')
 com = model.result
@@ -86,7 +112,7 @@ for i in com:
         plt.title(_title)
         plt.ylim(miny,maxy)
         plt.grid(True)
-        plt.savefig('output/pinch_' + str(i) + '.png')
+        plt.savefig('output/m2/m2-pinch_' + str(i) + '.png')
         plt.close()
 
     else:
