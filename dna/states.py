@@ -23,26 +23,39 @@ rp.setref(hrf='def',ixflag=1)
 molWNH3 = rp.info(1)['wmm']
 molWH2O = rp.info(2)['wmm']
 
+usermedia = {
+    'hitecxl': {'cp': 1.447, 'tmin': 130, 'tmax': 490},
+    'hitec': {'cp': 1.5617, 'tmin': 180, 'tmax': 560}
+}
+
+def checkMediaAndEngine(node):
+    if 'media' in node and node['media'] in usermedia:
+        node['cp'] = usermedia[node['media']]['cp']
+        node['tmin'] = usermedia[node['media']]['tmin']
+        node['tmax'] = usermedia[node['media']]['tmax']
+        return False
+
+    return True
+
 def state(node):
 
-    use_rp = True
-
-    if 'media' in node:
-        usermedia = {
-            'hitecxl': {'cp': 1.447, 'tmin': 130, 'tmax': 490},
-            'hitec': {'cp': 1.5617, 'tmin': 180, 'tmax': 560}
-        }
-
-        if node['media'] in usermedia:
-            node['cp'] = usermedia[node['media']]['cp']
-            node['tmin'] = usermedia[node['media']]['tmin']
-            node['tmax'] = usermedia[node['media']]['tmax']
-            use_rp = False
+    use_rp = checkMediaAndEngine(node)
 
     if use_rp:
         return refpropState(node)
     else:
         return cpBasedState(node)
+
+def crit(node):
+    use_rp = checkMediaAndEngine(node)
+
+    if use_rp:
+        prop = toRefprop(node)
+        node.update(fromRefprop(rp.critp(prop['x'])))
+        return node
+
+    # Fallback: Return -1
+    return -1
 
 def molarToMass(x):
     mass_nh3 = float(x)*molWNH3;
@@ -122,6 +135,9 @@ def fromRefprop(prop):
     if 'p' in prop:
         node['p'] = prop['p']/100 # kPa > hPa
 
+    if 'pcrit' in prop:
+        node['pcrit'] = prop['pcrit']/100 # kPa > hPa
+
     if 'e' in prop:
         node['e'] = prop['e']/molWmix # J/mol > kJ/kg
 
@@ -131,11 +147,17 @@ def fromRefprop(prop):
     if 'D' in prop:
         node['D'] = prop['D']*molWmix/1000 # mol/L > kg/m3
 
+    if 'Dcrit' in prop:
+        node['Dcrit'] = prop['Dcrit']*molWmix/1000 # mol/L > kg/m3
+
     if 's' in prop:
         node['s'] = prop['s']/molWmix # J/mol*K > kJ/kg*K
 
     if 't' in prop:
         node['t'] = prop['t'] - 273.15 # K > C
+
+    if 'tcrit' in prop:
+        node['tcrit'] = prop['tcrit'] - 273.15 # K > C
 
     if 'cv' in prop:
         node['cv'] = prop['cv']/molWmix # J/mol*K > kJ/kg*K
