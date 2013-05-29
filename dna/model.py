@@ -1,5 +1,7 @@
-from dna.iterate import IterateParamHelper
 import csv
+
+from dna.iterate import IterateParamHelper
+from dna.vendor import refprop as rp
 
 def is_number(s):
     try:
@@ -238,7 +240,7 @@ class IterateModel:
             try:
                 # Run the model
                 model.run()
-            except refprop.RefpropError as e:
+            except rp.RefpropError as e:
                 print(e)
                 raise(e)
             else:

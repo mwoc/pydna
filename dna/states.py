@@ -216,7 +216,8 @@ def refpropState(node):
         in1 = _node['t']
         in2 = _node['q']
     else:
-        raise InputError('state','Missing inputs for: '.str(_node))
+        print(_node)
+        raise InputError('state','Missing inputs for above node')
 
     try:
         # Calculate

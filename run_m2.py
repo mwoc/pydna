@@ -31,13 +31,13 @@ cond['nu_is'] = 0.8
 cond['nu_mech'] = 0.98
 cond['nu_pump'] = 0.90
 
-cond['Q_rcvr'] = 12500
-cond['Q_stor'] = 12500
+cond['Q_rcvr'] = 0
+cond['Q_stor'] = 25000
 
 cond['dT_con'] = 15
 cond['pinch_hex'] = 5
 cond['pinch_con'] = 4
-cond['pinch_stor'] = 20
+cond['pinch_stor'] = 5
 
 cond['Nseg'] = 11
 cond['Nseg_con'] = 1
@@ -61,17 +61,16 @@ if len(sys.argv) > 1:
             cond['molefrac_lpp'] = float(opt[1])
 
 # Simulation guesses (iterate!!):
-cond['molefrac_n15'] = cond['molefrac_rcvr']
-cond['molefrac_n44'] = cond['molefrac_stor']
+cond['molefrac_n15'] = cond['molefrac_stor']
+cond['molefrac_n41'] = cond['molefrac_rcvr']
 
 if not 'molefrac_lpp' in cond:
     cond['molefrac_lpp'] = (cond['molefrac_rcvr'] + cond['molefrac_stor'])/4
 
-cond['h_node6'] = False # That means no start value is given
+cond['h_node5'] = False # That means no start value is given
 cond['t_node15.1'] = False
-cond['t_node44.1'] = False
-cond['t_node18.1'] = False
-cond['t_node47.1'] = False
+cond['t_node41.1'] = False
+cond['t_node17.1'] = False
 
 # Pass initial conditions to model and run/iterate it
 try:
@@ -84,7 +83,7 @@ except KeyboardInterrupt:
 finally:
     #eff = model.result['eff']
 
-    simname = 'm2-p{0:.2f}-ys{1:.2f}-yb{2:.2f}'.format(cond['p_hi'], cond['molefrac_n44'], cond['molefrac_n15'])
+    simname = 'm2-p{0:.2f}-ys{1:.2f}-yb{2:.2f}'.format(cond['p_hi'], cond['molefrac_n15'], cond['molefrac_n41'])
 
     # Export result
     model.export('m2/'+simname)

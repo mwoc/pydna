@@ -32,7 +32,7 @@ class MyModel(DnaModel):
 
         ### Receiver bypass ###
 
-        self.addComponent(com.Valve, 'valve2').nodes(41, 42)
+        self.addComponent(com.Valve, 'valve2').nodes('41.1', 42)
 
         ### Storage loop ###
 
@@ -86,12 +86,12 @@ class MyModel(DnaModel):
 
         p_me = state({
             'media': 'kalina',
-            'y': cond['molefrac_n17'],
+            'y': cond['molefrac_n15'],
             't': t_sat,
             'q': 0
         })['p']
 
-        t_sat_stor = state({'p': p_me, 'y': cond['molefrac_n17'], 'q': 0})['t']
+        t_sat_stor = state({'p': p_me, 'y': cond['molefrac_n15'], 'q': 0})['t']
 
         # Storage conditions:
         self.nodes[61].update({
@@ -102,11 +102,16 @@ class MyModel(DnaModel):
 
         self.nodes['17.1'].update({
             'media': 'kalina',
-            'y': cond['molefrac_n17'],
-            'p': cond['p_hi'],
-            't': cond['t_node47.1']
+            'y': cond['molefrac_n15'],
+            'p': cond['p_hi']
         })
-        self.nodes[18]['t'] = self.nodes[61]['t'] - 5
+
+        self.nodes['17.1']['t'] = state({'p': p_lo, 'y': cond['molefrac_n15'], 'q': 0.9})['t']
+
+        if cond['t_node17.1'] is not False:
+            self.nodes['17.1']['t'] = cond['t_node17.1']
+
+        self.nodes[1]['t'] = self.nodes[61]['t'] - 5
 
         components['storage'].calc(cond['Nseg'], cond['pinch_hex'], Q = cond['Q_stor'])
 
@@ -134,6 +139,7 @@ class MyModel(DnaModel):
         if cond['h_node5'] is not False:
             # Minor corrections might be needed after first run
             self.nodes['5.1']['h'] = cond['h_node5']
+            state(self.nodes['5.1'])
 
         # Several fixed guesses:
         self.nodes[6]['t'] = t_sat + 10 # < Chosen to satisfy pinch
@@ -146,10 +152,10 @@ class MyModel(DnaModel):
 
         # Prheat1s
         self.nodes['15.1'].update({
-            'media': self.nodes[17]['media'],
-            'y': cond['molefrac_n17'],
-            'mdot': self.nodes[17]['mdot'],
-            'p': self.nodes[17]['p']
+            'media': self.nodes[1]['media'],
+            'y': cond['molefrac_n15'],
+            'mdot': self.nodes[1]['mdot'],
+            'p': self.nodes[1]['p']
         })
         # T probably close to maximum saturation temperature of stor/rcvr
         self.nodes['15.1']['t'] = t_sat_stor
@@ -163,13 +169,18 @@ class MyModel(DnaModel):
         components['valve1'].calc()
 
         # Receiver bypass - identical mass flow rate to receiver:
-        self.nodes[41].update({
+        self.nodes['41.1'].update({
             'media': 'kalina',
             'y': cond['molefrac_n41'],
             'p': p_me,
-            't': cond['t_node41.1'],
             'mdot': self.nodes[1]['mdot']
         })
+
+        self.nodes['41.1']['t'] = (self.nodes[30]['t'] + t_sat)/2
+
+        if cond['t_node41.1'] is not False:
+            self.nodes['41.1']['t'] = cond['t_node41.1']
+
         self.nodes[42]['p'] = p_lo
 
         components['valve2'].calc()
@@ -199,12 +210,12 @@ class MyModel(DnaModel):
 
         self.nodes[13].update({
             'y': cond['molefrac_stor'], # This is a guess
-            'mdot': self.nodes[19]['mdot']
+            'mdot': self.nodes[1]['mdot']
         })
 
         self.nodes[41].update({
             'y': cond['molefrac_rcvr'], # This is a guess
-            'mdot': self.nodes[42]['mdot']
+            'mdot': self.nodes[1]['mdot']
         })
 
         # DynamicSplitMerge will check if it can meet those guesses
@@ -221,16 +232,13 @@ class MyModel(DnaModel):
 
         self.nodes[70]['t'] = cond['t_con'] + cond['dT_con']
 
-        self.nodes[13]['q'] = 0
+        self.nodes[14]['q'] = 0
         components['hpcons'].calc(cond['Nseg_con'], cond['pinch_con'])
 
-        self.nodes[14]['p'] = p_hi   # Have to tell pump how far to increase pressure
+        self.nodes[15]['p'] = cond['p_hi']  # Have to tell pump how far to increase pressure
         components['hppumps'].calc()
 
         components['prheat2s'].calc(cond['Nseg'], cond['pinch_hex'])
-
-        # Nerge streams 5+52 > 6
-        components['mixprh2'].calc()
 
         print(self.efficiency())
 
@@ -267,16 +275,16 @@ class MyModel(DnaModel):
         })
 
         res.append({
-            'cond': 'molefrac_n44',
-            'value': self.nodes[44]['y'],
-            'alter': self.nodes['44.1']['y'],
+            'cond': 'molefrac_n41',
+            'value': self.nodes[41]['y'],
+            'alter': self.nodes['41.1']['y'],
             'range': [0, 1]
         })
 
         # This means: match n6[t] and n6.1[t]
         node6 = {
             'cond': 'h_node5',
-            'value': self.nodes[5]['t'],
+            'value': self.nodes[5]['h'],
             'alter': self.nodes['5.1']['h'],
             'range': [self.nodes[8]['h'], self.nodes[2]['h']]
         }
@@ -294,7 +302,6 @@ class MyModel(DnaModel):
             'range': [t_sat-5, self.nodes[15]['t']+5]
         })
 
-        # Alter 18.1.t until it matches 18.t
         res.append({
             'cond': 't_node17.1',
             'value': self.nodes[17]['t'],
@@ -324,9 +331,4 @@ class MyModel(DnaModel):
 
         self.result['eff'] = (W_out - W_in) / Q_in
 
-        print('Q_in: ', Q_in)
-        print('W_in: ', W_in)
-        print('W_out: ', W_out)
-        print('eff: ', self.result['eff'])
-
-        return self
+        return {'Q_in': Q_in, 'W_in': W_in, 'W_out': W_out, 'eff': self.result['eff']}

@@ -15,6 +15,9 @@ class Pump(Component):
         n1 = n['i'][0]
         n2 = n['o'][0]
 
+        if not 'p' in n1 or not 'p' in n2:
+            raise Exception(self.name +' - pressure on both sides of pump has to be specified')
+
         state(n1)
 
         if n1['q'] > 0.001:

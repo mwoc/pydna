@@ -15,16 +15,22 @@ class Valve(Component):
     def calc(self):
         n = self.getNodes()
 
-        state(n['i'][0])
+        n1 = n['i'][0]
+        n2 = n['o'][0]
 
-        if 'media' in n['i'][0]:
-            n['o'][0]['media'] = n['i'][0]['media']
+        if not 'p' in n1 or not 'p' in n2:
+            raise Exception(self.name + ' - pressure on both sides of valve has to be specified')
 
-        n['o'][0]['h'] = n['i'][0]['h']
-        n['o'][0]['y'] = n['i'][0]['y']
-        n['o'][0]['mdot'] = n['i'][0]['mdot']
+        state(n1)
 
-        state(n['o'][0])
+        if 'media' in n1:
+            n2['media'] = n1['media']
+
+        n2['h'] = n1['h']
+        n2['y'] = n1['y']
+        n2['mdot'] = n1['mdot']
+
+        state(n2)
         return self
 
 class Mixer(Component):

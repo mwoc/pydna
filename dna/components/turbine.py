@@ -15,6 +15,9 @@ class Turbine(Component):
         n1 = n['i'][0]
         n2 = n['o'][0]
 
+        if not 'p' in n1 or not 'p' in n2:
+            raise Exception(self.name +' - pressure on both sides of turbine has to be specified')
+
         if 'media' in n1:
             n2['media'] = n1['media']
 
