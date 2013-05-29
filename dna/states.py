@@ -274,8 +274,13 @@ def cpBasedState(node):
     # Calculation
     if 'h' in node:
         node['t'] = node['h'] / node['cp']
+        node['s'] = node['h'] / (node['t'] + 273.15)
 
     elif 't' in node:
+        node['h'] = node['cp'] * node['t']
+        node['s'] = node['h'] / (node['t'] + 273.15)
+    elif 's' in node:
+        node['t'] = 273.15 / ((node['cp'] / node['s']) - 1)
         node['h'] = node['cp'] * node['t']
 
     return node
