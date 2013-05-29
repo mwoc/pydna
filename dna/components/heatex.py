@@ -6,6 +6,7 @@ import warnings
 from dna.states import state
 from dna.iterate import IterateParamHelper
 from dna.component import Component
+from dna.vendor import refprop as rp
 
 class ConvergenceError(Exception):
     def __init__(self, value):
@@ -231,7 +232,7 @@ class PinchCalc:
                 try:
                     # Check internal pinch too
                     result['pinch'] = self.check(_n1, _n2, _n3, _n4)
-                except dna.rp.RefpropError as e:
+                except rp.RefpropError as e:
                     # Ignore me
                     print(e)
                     print('Next')
@@ -362,17 +363,17 @@ class PinchHex(Component):
                     # If that failed, try from the other
                     try:
                         pinch = pincher.iterate(side = 2)
-                    except dna.rp.RefpropError as e:
+                    except rp.RefpropError as e:
                         print('Second side iteration also failed.')
                         raise Exception(e)
-                except dna.rp.RefpropError as e:
+                except rp.RefpropError as e:
                     print('First side failed, trying second. Reason:')
                     print(e)
 
                     # If that failed, try from the other
                     try:
                         pinch = pincher.iterate(side = 2)
-                    except dna.rp.RefpropError as e:
+                    except rp.RefpropError as e:
                         print('Second side iteration also failed.')
                         raise Exception(e)
                 except ConvergenceError as e:
@@ -380,7 +381,7 @@ class PinchHex(Component):
 
                     try:
                         pinch = pincher.iterate(side = 2)
-                    except dna.rp.RefpropError as e:
+                    except rp.RefpropError as e:
                         print('Second side iteration also failed.')
                         raise Exception(e)
                 except Exception as e:

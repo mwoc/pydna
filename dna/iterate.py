@@ -8,11 +8,10 @@ class IterateParamHelper:
         self.cond = ''
         self.delta = 1
         self.tol = 0.0001
-        self.lastPop = 0
 
     def append(self, x, y):
 
-        # Guard against duplicates, as these hamper convergence:
+        # Guard against duplicates, which hamper convergence:
         if x in self.x:
             i = self.x.index(x)
             self.x.pop(i)
@@ -42,23 +41,10 @@ class IterateParamHelper:
 
         # Use early returns in this method to prevent code duplication
 
-        if len(self.x) > 5 and manual is False:
-            bmin = min(self.y)
-            bmax = max(self.y)
-
-            if abs(bmin) > abs(bmax):
-                val = bmin
-            else:
-                val = bmax
-
-            i = self.y.index(val)
-
-            if i == len(self.x)-1 or i is self.lastPop:
-                i = 0
-
-            self.x.pop(i)
-            self.y.pop(i)
-            self.lastPop = i
+        if len(self.x) > 4:
+            # Clear up old guesses
+            self.x.pop(0)
+            self.y.pop(0)
 
         if not manual and abs(currVal) < 1 and abs(self.delta) > 0.1 * abs(currVal):
             # In non-manual mode, be extra careful for deviations larger than 10%

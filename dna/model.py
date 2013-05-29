@@ -260,20 +260,10 @@ class IterateModel:
                         maxDelta = currIter.delta # maxDelta is for controlling the while loop
 
                     if currIter.delta != 0:
-                        # Try to append new x/y values to iterator
+                        # Append new x/y values to iterator
                         currIter.append(self.cond[currRes['cond']], currIter.delta)
 
                 deltas.append(totalDelta)
-
-                if self.i < 4 and len(deltas) > 1 and deltas[-2] < deltas[-1]:
-                    #in the beginning, we might need to help a bit to clear out bad guesses
-
-                    print('Clearing guesses!')
-                    for index, currIter in enumerate(self.iterate):
-                        if len(currIter.x) > 1:
-                            del currIter.x[-2]
-                            del currIter.y[-2]
-
 
             # Export temporary results after each iteration
             model.export('tmp' + str(self.i))
