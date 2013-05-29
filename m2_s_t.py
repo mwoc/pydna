@@ -267,21 +267,24 @@ class MyModel(DnaModel):
             'cond': 'molefrac_lpp',
             'value': self.nodes[8]['y'],
             'alter': self.cond['molefrac_lpp'],
-            'range': [0, self.nodes[1]['y']]
+            'range': [0, self.nodes[1]['y']],
+            'tol': 0.001
         })
 
         res.append({
             'cond': 'molefrac_n15',
             'value': self.nodes[15]['y'],
             'alter': self.nodes['15.1']['y'],
-            'range': [0, 1]
+            'range': [0, 1],
+            'tol': 0.001
         })
 
         res.append({
             'cond': 'molefrac_n41',
             'value': self.nodes[41]['y'],
             'alter': self.nodes['41.1']['y'],
-            'range': [0, 1]
+            'range': [0, 1],
+            'tol': 0.001
         })
 
         # This means: match n6[t] and n6.1[t]
@@ -289,7 +292,8 @@ class MyModel(DnaModel):
             'cond': 'h_node5',
             'value': self.nodes[5]['h'],
             'alter': self.nodes['5.1']['h'],
-            'range': [self.nodes[8]['h'], self.nodes[2]['h']]
+            'range': [self.nodes[8]['h'], self.nodes[2]['h']],
+            'tol': 0.1
         }
 
         # FIXME: This residual is not working accurately, it could be as much
