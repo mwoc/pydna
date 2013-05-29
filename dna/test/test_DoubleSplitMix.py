@@ -1,5 +1,5 @@
-from components import DoubleSplitMix
-from model import DnaModel
+from dna.components import DoubleSplitMix
+from dna.model import DnaModel
 
 class DSMTest(DnaModel):
     def run(self):

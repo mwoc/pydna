@@ -221,6 +221,9 @@ class MyModel(DnaModel):
         # DynamicSplitMerge will check if it can meet those guesses
         components['dsm1'].calc()
 
+        print('n13y = ',self.nodes[13]['y'])
+        print('n41y = ',self.nodes[41]['y'])
+
         ### Storage loop ###
 
         self.nodes[69].update({

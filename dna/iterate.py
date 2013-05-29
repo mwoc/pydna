@@ -60,8 +60,8 @@ class IterateParamHelper:
             self.y.pop(i)
             self.lastPop = i
 
-        if abs(currVal) < 1 and abs(self.delta) > 0.1 * abs(currVal):
-            # Be extra careful for deviations larger than 10%
+        if not manual and abs(currVal) < 1 and abs(self.delta) > 0.1 * abs(currVal):
+            # In non-manual mode, be extra careful for deviations larger than 10%
             return self.careful(currVal)
 
         if len(self.x) > 1:

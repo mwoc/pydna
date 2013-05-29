@@ -3,6 +3,7 @@ import scipy
 
 from dna.states import state
 from dna.component import Component
+from dna.iterate import IterateParamHelper
 
 class Valve(Component):
 
@@ -183,36 +184,27 @@ class DoubleSplitMix(Component):
             no_lean = n4
 
         i = 0
-        tol = 0.01
 
         # Iterate mass fraction left. Start with 50/50 split
 
+        currIter = IterateParamHelper()
+        currIter.tol = 0.01
 
-        delta = 1 # no_lean['y'] - yinit
-        x = []
-        y = []
-
-        while abs(delta) > tol and i < 10:
+        while abs(currIter.delta) > currIter.tol and i < 10:
             # Try finding solution on the lean side
             ni_lean_a = ni_lean.copy()
             ni_rich_a = ni_rich.copy()
 
             # Guess better mdot for lean_a/rich_a
 
-            if len(x) > 1:
-                # Curve fitting.
-                order = min(len(x) - 1, 3)
+            if len(currIter.x) > 0:
+                ratio = currIter.optimize(ratio, manual = True)
 
-                z = scipy.polyfit(x, y, order)
-                p = scipy.poly1d(z)
-
-                ratio = scipy.optimize.newton(p,ratio)
-
-            elif len(x) == 1:
+            else:
                 # Manual guess
                 ratio = no_lean['mdot'] / (ni_lean['mdot'] + ni_rich['mdot'])
-            else:
-                ratio = 0.5
+            #else:
+            #    ratio = 0.5
 
             if ratio > 1:
                 ratio = 1
@@ -230,15 +222,13 @@ class DoubleSplitMix(Component):
             _no_lean = no_lean.copy()
             _no_lean['y'] = (ni_lean_a['mdot'] * ni_lean_a['y'] + ni_rich_a['mdot'] * ni_rich_a['y']) / _no_lean['mdot']
 
-            delta = no_lean['y'] - _no_lean['y']
+            delta = _no_lean['y'] - no_lean['y']
 
-            if ratio in x:
-                ix = x.index(ratio)
-                x.pop(ix)
-                y.pop(ix)
+            print('Ratio: {}, delta: {}'.format(ratio, delta))
 
-            x.append(ratio)
-            y.append(delta)
+            currIter.delta = delta
+            currIter.append(ratio, delta)
+
             i = i + 1
 
         # Found split ratio, solve splitters and mixers
