@@ -73,7 +73,7 @@ def toRefprop(node):
         prop['h'] = node['h']*molWmix # kJ/kg*K > J/mol*K
 
     if 'D' in node:
-        prop['D'] = node['D']/molWmix*1000 # kg/L > mol/m3
+        prop['D'] = node['D']/molWmix*1000 # kg/m3 > mol/L
 
     if 's' in node:
         prop['s'] = node['s']*molWmix # kJ/kg*K > J/mol*K
@@ -87,13 +87,25 @@ def toRefprop(node):
     if 'cp' in node:
         prop['cp'] = node['cp']*molWmix # kJ/kg*K > J/mol*K
 
-    if 'q' in prop and 'yvap' in prop and 'yliq' in prop:
-        tmpYliq = [prop['yliq'], 1 - prop['yliq']]
-        tmpYvap = [prop['yvap'], 1 - prop['yvap']]
-        tmpInfo = rp.qmass(max(0, min(1, prop['q'])), tmpYliq, tmpYvap)
-        prop['q'] = tmpInfo['q']
+    if 'q' in node:
+        q = max(0, min(1, node['q']))
+        if not 'yvap' in node or not 'yliq' in node:
+            if q == 0:
+                node['yliq'] = node['y']
+                node['yvap'] = 0
+            elif q == 1:
+                node['yvap'] = node['y']
+                node['yliq'] = 0
+            else:
+                raise ValueError('Can not support this value for q')
+
+        tmpYliq = [node['yliq'], 1 - node['yliq']]
+        tmpYvap = [node['yvap'], 1 - node['yvap']]
+        tmpInfo = rp.qmole(q, tmpYliq, tmpYvap)
+
         prop['xliq'] = tmpInfo['xliq']
         prop['xvap'] = tmpInfo['xvap']
+        prop['q'] = tmpInfo['q']
 
     return prop
 

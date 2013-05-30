@@ -123,7 +123,7 @@ class MyModel(DnaModel):
         })
 
         # y does not have the right value
-        self.nodes['18.1']['t'] = state({'p': p_lo, 'y': cond['molefrac_n15'], 'q': 0.9})['t']
+        self.nodes['18.1']['t'] = state({'p': p_lo, 'y': cond['molefrac_n15'], 'q': 1})['t'] - 10
 
         if cond['t_node18.1'] is not False:
             self.nodes['18.1']['t'] = cond['t_node18.1']
@@ -146,7 +146,7 @@ class MyModel(DnaModel):
         })
 
         # y does not have the right value
-        self.nodes['47.1']['t'] = state({'p': p_lo, 'y': cond['molefrac_n44'], 'q': 0.9})['t']
+        self.nodes['47.1']['t'] = state({'p': p_lo, 'y': cond['molefrac_n44'], 'q': 1})['t'] - 10
 
         if cond['t_node47.1'] is not False:
             self.nodes['47.1']['t'] = cond['t_node47.1']
