@@ -18,7 +18,7 @@ class IterateParamHelper:
             self.y.pop(i)
 
         if y in self.y:
-            i = self.y.index(x)
+            i = self.y.index(y)
             self.x.pop(i)
             self.y.pop(i)
 

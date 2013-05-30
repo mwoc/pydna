@@ -23,7 +23,7 @@ sys.path.append(_filename)
 #from test_Storage import StorageTest
 #hx = StorageTest({}).run().analyse().plot()
 
-from test_Discharge import DischargeTest
+from dna.test.test_Discharge import DischargeTest
 hx = DischargeTest({}).run().analyse().plot()
 
 #from test_ThreeStepDischarge import ThreeStepDischargeTest

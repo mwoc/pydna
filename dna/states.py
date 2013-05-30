@@ -20,8 +20,6 @@ class InputError(Error):
 
 rp.setup('def', 'ammonia', 'water')
 rp.setref(hrf='def',ixflag=1)
-molWNH3 = rp.info(1)['wmm']
-molWH2O = rp.info(2)['wmm']
 
 usermedia = {
     'hitecxl': {'cp': 1.447, 'tmin': 130, 'tmax': 490},
@@ -57,28 +55,10 @@ def crit(node):
     # Fallback: Return -1
     return -1
 
-def molarToMass(x):
-    mass_nh3 = float(x)*molWNH3;
-    mass_h2o = (1-float(x))*molWH2O;
-
-    mass_total = mass_nh3 + mass_h2o
-
-    return [mass_nh3/mass_total, 1-mass_nh3/mass_total]
-
-def massToMolar(y):
-    m_nh3 = float(y)/molWNH3
-    m_h2o = (1-float(y))/molWH2O
-
-    mt = m_nh3 + m_h2o
-
-    return [m_nh3/mt, 1-m_nh3/mt]
-
 def toRefprop(node):
-    prop = {}
+    prop = rp.xmole([node['y'],1-node['y']])
 
-    x = massToMolar(node['y'])
-
-    molWmix = float(x[0]) * float(molWNH3) + float(x[1]) * float(molWH2O) # g/mol
+    molWmix = prop['wmix']
 
     if 'mdot' in node:
         prop['mdot'] = node['mdot']
@@ -107,26 +87,24 @@ def toRefprop(node):
     if 'cp' in node:
         prop['cp'] = node['cp']*molWmix # kJ/kg*K > J/mol*K
 
-    if 'q' in node:
-        prop['q'] = massToMolar(node['q'])[0] # kg/kg > mol/mol
-
-    if 'y' in node:
-        prop['x'] = massToMolar(node['y']) # kg/kg > mol/mol
-
-    if 'yvap' in node:
-        prop['xvap'] = massToMolar(node['yvap']) # kg/kg > mol/mol
-
-    if 'yliq' in node:
-        prop['xliq'] = massToMolar(node['yliq']) # kg/kg > mol/mol
+    if 'q' in prop and 'yvap' in prop and 'yliq' in prop:
+        tmpYliq = [prop['yliq'], 1 - prop['yliq']]
+        tmpYvap = [prop['yvap'], 1 - prop['yvap']]
+        tmpInfo = rp.qmass(max(0, min(1, prop['q'])), tmpYliq, tmpYvap)
+        prop['q'] = tmpInfo['q']
+        prop['xliq'] = tmpInfo['xliq']
+        prop['xvap'] = tmpInfo['xvap']
 
     return prop
 
 def fromRefprop(prop):
     node = {}
 
-    x = prop['x']
+    tmpNode = rp.xmass(prop['x'])
 
-    molWmix = float(x[0]) * float(molWNH3) + float(x[1]) * float(molWH2O)
+    node['y'] = float(tmpNode['xkg'][0])
+
+    molWmix = tmpNode['wmix']
 
     if 'mdot' in prop:
         node['mdot'] = prop['mdot']
@@ -165,17 +143,11 @@ def fromRefprop(prop):
     if 'cp' in prop:
         node['cp'] = prop['cp']/molWmix # J/mol*K > kJ/kg*K
 
-    if 'q' in prop:
-        node['q'] = molarToMass(prop['q'])[0] # mol/mol > kg/kg
-
-    if 'x' in prop:
-        node['y'] = molarToMass(prop['x'][0])[0] # mol/mol > kg/kg
-
-    if 'xvap' in prop:
-        node['yvap'] = molarToMass(prop['xvap'][0])[0] # mol/mol > kg/kg
-
-    if 'xliq' in prop:
-        node['yliq'] = molarToMass(prop['xliq'][0])[0] # mol/mol > kg/kg
+    if 'q' in prop and 'xvap' in prop and 'xliq' in prop:
+        tmpInfo = rp.qmass(max(0, min(1, prop['q'])), prop['xvap'], prop['xliq'])
+        node['q'] = float(tmpInfo['qkg'])
+        node['yvap'] = float(tmpInfo['xvkg'][0])
+        node['yliq'] = float(tmpInfo['xlkg'][0])
 
     return node
 
@@ -185,8 +157,7 @@ def _PHworkaround(_node, depth = 1):
         print(_node)
         raise RuntimeError('Failed to find state for node')
 
-    x = _node['x']
-    molWmix = float(x[0]) * float(molWNH3) + float(x[1]) * float(molWH2O)
+    molWmix = rp.wmol(_node['x'])
 
     try:
         propl = rp.flsh('ph', _node['p'], _node['h'] - 25*molWmix*depth, _node['x'])

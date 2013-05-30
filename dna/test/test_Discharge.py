@@ -1,9 +1,8 @@
-import components as comp
-import model
-
-# For plotting:
 import numpy as np
 import matplotlib.pyplot as plt
+
+from dna.components import PinchHex
+from dna.model import DnaModel
 
 def round_down(num, divisor):
     return num - (num%divisor)
@@ -11,26 +10,26 @@ def round_up(num, divisor):
     return num + (num%divisor)
 
 # Actual test:
-class DischargeTest(model.DnaModel):
+class DischargeTest(DnaModel):
     def run(self):
-        heatex = self.addComponent(comp.PinchHex, 'heatex').nodes(1, 2, 3, 4)
+        heatex = self.addComponent(PinchHex, 'heatex').nodes(1, 2, 3, 4)
 
         self.nodes[1].update({
             'media': 'hitecxl',
-            't': 443,
+            't': 440,
             'p': 1
         })
 
         self.nodes[3].update({
             'media': 'kalina',
-            'y': 0.4,
-            't': 62.9694842283,
+            'y': 0.5,
+            't': 85,
             'p': 100
         })
 
-        self.nodes[4]['t'] = 438
+        self.nodes[4]['t'] = 435
 
-        heatex.calc(Nseg = 19, dTmin = 5, Q = 12500)
+        heatex.calc(Nseg = 35, dTmin = 5, Q = 12500)
 
         return self
 
@@ -47,7 +46,7 @@ class DischargeTest(model.DnaModel):
         dT_mean = np.mean(dT)
         print('dT_mean = ', dT_mean)
 
-        print(self.nodes[3]['t'],',', self.nodes[2]['t'],',', self.nodes[1]['mdot'],',', self.nodes[3]['mdot'], ',',dT_mean, ',',self.nodes[3]['q'])
+        print(self.nodes[3]['t'],'\t', self.nodes[2]['t'],'\t', self.nodes[1]['mdot'],'\t', self.nodes[3]['mdot'], '\t',dT_mean, '\t',self.nodes[3]['q'])
 
         x = np.linspace(0, 1, len(result['Th']))
         miny = round_down(min(min(result['Tc']), min(result['Th']))-1, 10)
@@ -59,7 +58,7 @@ class DischargeTest(model.DnaModel):
         plt.title(_title)
         plt.ylim(miny, maxy)
         plt.grid(True)
-        plt.savefig('../output/dischargeTest.png')
+        plt.savefig('output/dischargeTest.png')
         plt.close()
 
         return self
