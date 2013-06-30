@@ -1,8 +1,10 @@
+__pycache__
 output
 *.pyc
 *.png
 *.txt
 .~lock*
+*.bak
 *.csv
 *.geany
 *.ods
