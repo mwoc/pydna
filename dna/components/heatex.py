@@ -340,6 +340,12 @@ class PinchHex(Component):
         # Initiate pincher for later use
         pincher = PinchCalc(n1, n2, n3, n4, Nseg, dTmin)
 
+        if 'h' in n1 and 'h' in n2 and 'mdot' in n1:
+            Q = n1['mdot'] * (n1['h'] - n2['h'])
+
+        if 'h' in n3 and 'h' in n4 and 'mdot' in n3:
+            Q = n3['mdot'] * (n4['h'] - n3['h'])
+
         # Find any unknown inputs:
         if not 't' in n2 and not 't' in n4:
             # Find pinch by iteration, for given mass flow rates and inlet temperatures
@@ -391,7 +397,7 @@ class PinchHex(Component):
                     print('Pinch - {} - following outlet temperatures found:'.format(self.name))
                     print('T2: ', n2['t'], ' T4: ', n4['t'])
 
-        elif not 't' in n4 and not 'q' in n4:
+        elif not 'h' in n4:
             # Calculate T4 for given mass flow rates and other temperatures
             calc = True
 
@@ -406,7 +412,7 @@ class PinchHex(Component):
                 except Exception as e:
                     raise(e)
 
-        elif not 't' in n2 and not 'q' in n2:
+        elif not 'h' in n2:
             # Calculate T2 for given mass flow rates and other temperatures
             calc = True
 

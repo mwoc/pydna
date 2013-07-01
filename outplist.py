@@ -34,5 +34,7 @@ for f in sorted(os.listdir(root)):
                         result['y_stor'] = float(row[4])
                     elif row[0] == 'Eff.:':
                         result['eff'] = float(row[1])
+                    elif row[0] == '61':
+                        result['mdot_hitec'] = float(row[5])
 
             print(result)
